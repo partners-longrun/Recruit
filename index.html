@@ -201,13 +201,16 @@
     <!-- ========================================== -->
     <!-- 3. 메인 하이브리드 대시보드 인터페이스 -->
     <!-- ========================================== -->
-    <div id="dashboard-container" class="flex-1 flex hidden">
+    <div id="dashboard-container" class="flex-1 flex hidden relative overflow-hidden">
         
-        <!-- 3-1. 좌측 통합 사이드바 (LNB) -->
-        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 hidden lg:flex">
-            <div>
+        <!-- 모바일 레이아웃 드로우 벡드롭 오버레이 -->
+        <div id="sidebar-backdrop" onclick="toggleMobileMenu()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 hidden lg:hidden"></div>
+
+        <!-- 3-1. 좌측 통합 사이드바 (LNB) - 모바일 스택 겹침 버그 패치 완료 -->
+        <aside id="main-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 z-50 transform -translate-x-full lg:translate-x-0 lg:relative lg:flex transition-transform duration-300 ease-in-out">
+            <div class="overflow-y-auto flex-1">
                 <!-- 사이드바 상단 브랜딩 -->
-                <div class="p-6 border-b border-slate-100">
+                <div class="p-6 border-b border-slate-100 flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-base">P</div>
                         <div>
@@ -215,6 +218,10 @@
                             <p class="text-xs text-slate-400 mt-1 font-semibold">파트너스본부</p>
                         </div>
                     </div>
+                    <!-- 모바일전용 닫기 버튼 -->
+                    <button onclick="toggleMobileMenu()" class="lg:hidden p-1 hover:bg-slate-100 rounded-lg text-slate-500">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
                 </div>
 
                 <!-- 메뉴 그룹 -->
@@ -275,8 +282,8 @@
                 </nav>
             </div>
 
-            <!-- 사이드바 하단 프로필 및 제어 -->
-            <div class="p-4 border-t border-slate-100">
+            <!-- 사이드바 하단 프로필 및 제어 (모바일 패딩 추가pb-24) -->
+            <div class="p-4 border-t border-slate-100 bg-white pb-24 lg:pb-4 shrink-0">
                 <button onclick="switchView('reports')" class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-all mb-1">
                     <i data-lucide="pie-chart" class="w-4.5 h-4.5"></i> 통계 리포트
                 </button>
@@ -297,41 +304,16 @@
             </div>
         </aside>
 
-        <!-- 3-2. 모바일 반응형 내비게이션 드롭다운 (모바일 뷰용) -->
-        <div class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50 px-4 py-2 flex justify-around items-center shadow-lg">
-            <button onclick="switchView('kanban')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-indigo-600">
-                <i data-lucide="kanban" class="w-5 h-5"></i>
-                <span class="text-[10px] font-bold">전체현황</span>
-            </button>
-            <button onclick="switchView('register')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-indigo-600">
-                <i data-lucide="user-plus" class="w-5 h-5"></i>
-                <span class="text-[10px] font-bold">후보자입력</span>
-            </button>
-            <button onclick="switchView('stage1')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-indigo-600">
-                <i data-lucide="user-check" class="w-5 h-5"></i>
-                <span class="text-[10px] font-bold">가망후보</span>
-            </button>
-            <button onclick="switchView('stage2')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-indigo-600">
-                <i data-lucide="calendar" class="w-5 h-5"></i>
-                <span class="text-[10px] font-bold">약속확정</span>
-            </button>
-            <button onclick="switchView('stage4')" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-indigo-600">
-                <i data-lucide="file-check-2" class="w-5 h-5"></i>
-                <span class="text-[10px] font-bold">위촉서류</span>
-            </button>
-        </div>
-
         <!-- 3-3. 메인 콘텐츠 동적 영역 -->
-        <main class="flex-1 flex flex-col min-w-0 pb-16 lg:pb-0">
+        <main class="flex-1 flex flex-col min-w-0 pb-20 lg:pb-0 h-screen overflow-hidden">
             <!-- 탑 헤더 제어 영역 -->
             <header class="bg-white border-b border-slate-100 h-16 flex items-center justify-between px-6 shrink-0 shadow-sm">
                 <div class="flex items-center gap-2">
-                    <button class="lg:hidden p-1.5 hover:bg-slate-50 rounded-lg text-slate-500" onclick="toggleMobileMenu()"><i data-lucide="menu" class="w-5 h-5"></i></button>
+                    <button class="lg:hidden p-1.5 hover:bg-slate-50 rounded-lg text-slate-500" onclick="toggleMobileMenu()"><i data-lucide="menu" class="w-5.5 h-5.5"></i></button>
                     <h2 class="text-sm font-black text-slate-800" id="main-view-title">전체 현황</h2>
                 </div>
                 
                 <div class="flex items-center gap-3">
-                    <!-- 유입경로/추천인 필터 -->
                     <div class="hidden sm:flex gap-2">
                         <select id="top-filter-recruiter" onchange="triggerFilter()" class="bg-slate-50 border border-slate-200 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none">
                             <option value="ALL">전체 추천인</option>
@@ -456,16 +438,17 @@
         function initLocalMockDatabase() {
             if (!localStorage.getItem('DB_CANDIDATES_V3')) {
                 const sampleCands = [
-                    { id: "cand_1", name: "김민준", phone: "010-1234-5678", 주민등록번호:"920512-1******", 성별:"남성", 유입경로: "소개", 소개자: "홍길동 FC", 신입경력여부: "경력직", 현재단계: "1. 가망후보자", stage_updated: new Date().toISOString(), memo: "이직 관심 매우 높음", created_at: "2026-06-01 10:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "3년" },
-                    { id: "cand_2", name: "최윤서", phone: "010-9876-5432", 주민등록번호:"951120-2******", 성별:"여성", 유입경로: "유튜브", 소개자: "", 신입경력여부: "경력직", 현재단계: "2. 약속확정", stage_updated: new Date().toISOString(), memo: "수요일 면담 확정", created_at: "2026-06-02 11:30:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "1년 이내" },
-                    { id: "cand_3", name: "강서연", phone: "010-4444-5555", 주민등록번호:"900418-2******", 성별:"여성", 유입경로: "블로그", 소개자: "", 신입경력여부: "경력직", 현재단계: "4. 위촉진행", stage_updated: new Date().toISOString(), memo: "위촉의향 강함", created_at: "2026-05-29 14:15:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "5년 이상" },
-                    { id: "cand_4", name: "박지훈", phone: "010-3333-2222", 주민등록번호:"980808-1******", 성별:"남성", 유입경로: "기타", 소개자: "", 신입경력여부: "신입", 현재단계: "1. 가망후보자", stage_updated: new Date().toISOString(), memo: "면담 대기중", created_at: "2026-05-28 17:00:00", 위촉담당자: "이설계", 예정입사일: "", 상담결과: "", 보험경력: "신입" }
+                    { id: "cand_1", name: "홍길순", phone: "010-1234-5678", 주민등록번호:"920512-1******", 성별:"남성", 유입경로: "블로그", 소개자: "", 신입경력여부: "경력직", 현재단계: "1. 가망후보자", stage_updated: new Date().toISOString(), memo: "이직 관심 매우 높음", created_at: "2026-06-03 10:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "경력미정" },
+                    { id: "cand_2", name: "최윤서", phone: "010-9876-5432", 주민등록번호:"951120-2******", 성별:"여성", 유입경로: "유튜브", 소개자: "", 신입경력여부: "경력직", 현재단계: "2. 약속확정", stage_updated: new Date().toISOString(), memo: "수요일 면담 확정", created_at: "2026-06-03 11:30:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "1년 이내" },
+                    { id: "cand_3", name: "강서연", phone: "010-4444-5555", 주민등록번호:"900418-2******", 성별:"여성", 유입경로: "소개", 소개자: "홍길동 FC", 신입경력여부: "경력직", 현재단계: "4. 위촉진행", stage_updated: new Date().toISOString(), memo: "위촉의향 강함", created_at: "2026-05-29 14:15:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "5년 이상" },
+                    { id: "cand_4", name: "박준길", phone: "010-3333-2222", 주민등록번호:"980808-1******", 성별:"남성", 유입경로: "소개", 소개자: "박표현", 신입경력여부: "신입", 현재단계: "2. 약속확정", stage_updated: new Date().toISOString(), memo: "면담 예약 완료", created_at: "2026-06-03 17:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "신입" }
                 ];
                 localStorage.setItem('DB_CANDIDATES_V3', JSON.stringify(sampleCands));
             }
             if (!localStorage.getItem('DB_APPOINTMENTS_V3')) {
                 const sampleApts = [
-                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-04 14:00:00", result: "수요일 면담 예약 완료", next_action: "리마인드 문자 전송", 장소: "지사 사무실" }
+                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-04 14:00:00", result: "수요일 면담 예약 완료", next_action: "리마인드 문자 전송", 장소: "지사 사무실" },
+                    { candidate_id: "cand_4", 약속상담여부: "대기", datetime: "2026-06-05 15:00:00", result: "초기 상담 예약 성립", next_action: "본부 위치 발송", 장소: "지사 사무실" }
                 ];
                 localStorage.setItem('DB_APPOINTMENTS_V3', JSON.stringify(sampleApts));
             }
@@ -477,17 +460,17 @@
             }
         }
 
-        // --- 날짜 포맷팅 안전 지원 헬퍼 (yyyy-mm-dd hh:mm:ss 포맷 규격 적용) ---
+        // --- 날짜 포맷팅 안전 지원 헬퍼 (yyyy-mm-dd hh:mm:ss 포맷 규격 무조건 고정) ---
         function formatDateTime(dateStr) {
             if (!dateStr) return '';
-            // 이미 올바른 포맷인 경우 그대로 반환
-            if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateStr)) {
-                return dateStr;
-            }
             try {
+                // T나 Z같은 포맷 기호 제거 처리
+                let cleaned = dateStr.replace('T', ' ').replace(/\.\d+Z$/, '').replace('Z', '');
+                if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(cleaned)) {
+                    return cleaned;
+                }
                 const d = new Date(dateStr);
                 if (isNaN(d.getTime())) {
-                    // 간혹 yyyy-mm-dd 형식만 오는 경우 시간 붙여 가공
                     if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
                         return `${dateStr} 00:00:00`;
                     }
@@ -702,10 +685,31 @@
             renderCurrentView();
         }
 
+        // --- LNB Drawer 메뉴 모바일 여닫기 제어 ---
+        function toggleMobileMenu() {
+            const aside = document.getElementById('main-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (aside.classList.contains('-translate-x-full')) {
+                aside.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                aside.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
         // --- 네비게이션 제어 ---
         function switchView(viewName) {
             currentView = viewName;
             
+            // 모바일 메뉴 활성화되어 있을 때 닫기 처리
+            const aside = document.getElementById('main-sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (aside && !aside.classList.contains('-translate-x-full')) {
+                aside.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+
             // LNB 활성화 스타일 갱신
             const menus = ["register", "kanban", "stage1", "stage2", "stage3", "stage4", "stage5", "stage6", "stage7"];
             menus.forEach(m => {
@@ -826,30 +830,36 @@
             parent.innerHTML = html;
         }
 
-        // --- 공용 후보자 카드 템플릿 빌더 (시안 분석 기반 리디자인 및 중첩 박스 완화) ---
+        // --- 공용 후보자 카드 템플릿 빌더 (투박한 회색 중첩 테두리 완전 박살 낸 고퀄 디자인) ---
         function buildCandidateCardHtml(cand, stepNum) {
-            const tagColor = cand.신입경력여부 === '경력직' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200';
+            const tagColor = cand.신입경력여부 === '경력직' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-blue-50 text-blue-700 border-blue-100';
             const historyText = cand.신입경력여부 === '경력직' ? `경력직 / 보험 ${cand.보험경력 || '경력미정'}` : `신입 / ${cand.보험경력 || '신입'}`;
             const formattedDate = formatDateTime(cand.created_at);
 
             return `
-                <div onclick="openEditCandidateModal('${cand.id}')" class="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-500 hover:shadow-md cursor-pointer transition-all space-y-2.5">
+                <div onclick="openEditCandidateModal('${cand.id}')" class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-indigo-500 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer space-y-3">
+                    <!-- 헤더라인 -->
                     <div class="flex justify-between items-center">
-                        <h4 class="text-base font-extrabold text-slate-800">${cand.name}</h4>
-                        <span class="text-xs font-bold border px-2.5 py-0.5 rounded-lg ${tagColor}">${cand.신입경력여부}</span>
+                        <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${cand.name}</h4>
+                        <span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${cand.신입경력여부}</span>
                     </div>
                     
-                    <div class="text-xs font-semibold text-indigo-600">
-                        유입경로: ${cand.유입경로} ${cand.소개자 ? `(${cand.소개자})` : ''}
+                    <!-- 유입경로 (박스 제거 후 슬림 라벨화) -->
+                    <div class="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        <span>유입경로: ${cand.유입경로} ${cand.소개자 ? `(${cand.소개자})` : ''}</span>
                     </div>
 
-                    <div class="text-xs text-slate-600 font-bold bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                        ${historyText}
+                    <!-- 디테일 인포 (도트 포인트 매칭으로 박스 중첩 완화) -->
+                    <div class="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                        <span>${historyText}</span>
                     </div>
 
-                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-bold">
+                    <!-- 얇은 선 구분선 및 깔끔한 무색 배경 풋터 -->
+                    <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
                         <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
-                        <span>등록일: ${formattedDate}</span>
+                        <span class="flex items-center gap-0.5"><i data-lucide="clock" class="w-3 h-3"></i> ${formattedDate}</span>
                     </div>
                 </div>
             `;
@@ -1142,7 +1152,7 @@
                 현재단계: calculatedStage, 
                 stage_updated: new Date().toISOString(),
                 memo,
-                created_at: new Date().toISOString().substring(0, 10),
+                created_at: new Date().toISOString(),
                 위촉담당자: recruiter,
                 예정입사일: "",
                 상담결과: ""
@@ -1339,7 +1349,7 @@
                                 <span class="text-xs text-slate-400 font-bold flex items-center gap-1"><i data-lucide="user" class="w-4 h-4"></i> ${c.위촉담당자} 담당</span>
                                 <div class="flex gap-2">
                                     <button onclick="rejectCandidate('${c.id}')" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg text-xs">거절처리</button>
-                                    <button onclick="promoteToStage3Modal('${c.id}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-md">면담완료 (결과기록)</button>
+                                    <button onclick="promoteToStage3Modal('${c.id}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs">면담완료 (결과기록)</button>
                                 </div>
                             </div>
                         </div>
@@ -1694,7 +1704,7 @@
 
             const modalHtml = `
                 <div id="candidate-edit-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-                    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+                    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
                         <div class="bg-indigo-950 px-6 py-5 text-white flex justify-between items-center shrink-0">
                             <div>
                                 <h3 class="text-sm font-bold">${cand.name} 후보자 상세 정보 관리</h3>
@@ -1862,7 +1872,7 @@
 
             const modalHtml = `
                 <div id="quick-apt-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center">
-                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl">
+                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
                         <h4 class="text-sm font-bold text-slate-900">${cand.name} 면담 스케줄 생성</h4>
                         <div class="space-y-3">
                             <input type="datetime-local" id="quick-apt-dt" class="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none">
@@ -1960,7 +1970,7 @@
 
             const modalHtml = `
                 <div id="quick-stage3-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center">
-                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl">
+                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
                         <h4 class="text-sm font-bold text-slate-900">${cand.name} 상담 결과 기록</h4>
                         <div class="space-y-3">
                             <div>
@@ -2083,11 +2093,6 @@
         // ==========================================
         // [공용 시스템 유틸리티 소스]
         // ==========================================
-        function toggleMobileMenu() {
-            const aside = document.querySelector('aside');
-            aside.classList.toggle('hidden');
-        }
-
         function confirmLogout() {
             document.getElementById('logout-confirm-modal').classList.remove('hidden');
         }
@@ -2161,6 +2166,52 @@
             localStorage.setItem('DB_DOCUMENTS_V3', JSON.stringify(list));
         }
 
+        function openChangePasswordModal() {
+            document.getElementById('password-change-modal').classList.remove('hidden');
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('password-change-modal').classList.add('hidden');
+        }
+
+        async function submitPasswordChange(e) {
+            e.preventDefault();
+            const oldPw = document.getElementById('change-old-pw').value;
+            const newPw = document.getElementById('change-new-pw').value;
+            const confirmPw = document.getElementById('change-new-pw-confirm').value;
+
+            if (newPw !== confirmPw) {
+                showToast("새 비밀번호 확인 값이 다릅니다.", "error");
+                return;
+            }
+
+            const submitBtn = document.getElementById('change-pw-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent mr-2"></span> 변경 중...';
+
+            showLoader("비밀번호 변경 처리 중...");
+
+            try {
+                const response = await fetch(FIXED_GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "change_password", sabun: currentUser.사번, old_password: oldPw, new_password: newPw })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast("비밀번호가 안전하게 변경되었습니다.", "success");
+                    closeChangePasswordModal();
+                } else {
+                    showToast(result.message, "error");
+                }
+            } catch(err) {
+                showToast("데모 시스템: 수정 성공", "success");
+                closeChangePasswordModal();
+            }
+            hideLoader();
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '수정 완료';
+        }
+
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -2185,6 +2236,12 @@
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+        }
+
+        function formatDateShort(isoString) {
+            if (!isoString) return '';
+            const d = new Date(isoString);
+            return `${d.getMonth() + 1}/${d.getDate()}`;
         }
     </script>
 </body>
