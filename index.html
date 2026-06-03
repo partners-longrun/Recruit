@@ -49,7 +49,7 @@
         }
     </style>
 </head>
-<body class="bg-[#F8F9FA] text-[#333333] antialiased min-h-screen flex flex-col text-sm">
+<body class="bg-[#F8F9FA] text-[#333333] antialiased min-h-screen flex flex-col text-sm relative">
 
     <!-- 글로벌 로딩 마스크 -->
     <div id="global-loader" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex flex-col items-center justify-center hidden">
@@ -336,6 +336,12 @@
         </main>
     </div>
 
+    <!-- 글로벌 플로팅 홈 버튼 (전체현황 복귀 전용) -->
+    <button id="floating-home-btn" onclick="switchView('kanban')" class="fixed bottom-20 right-6 lg:bottom-8 lg:right-8 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center gap-2 hidden group hover:scale-105 duration-200">
+        <i data-lucide="home" class="w-5 h-5"></i>
+        <span class="text-xs font-bold pr-1">전체현황 홈</span>
+    </button>
+
     <!-- ========================================== -->
     <!-- 4. 개인 비밀번호 수정 모달 -->
     <!-- ========================================== -->
@@ -447,8 +453,8 @@
             }
             if (!localStorage.getItem('DB_APPOINTMENTS_V3')) {
                 const sampleApts = [
-                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-04 14:00:00", result: "수요일 면담 예약 완료", next_action: "리마인드 문자 전송", 장소: "지사 사무실" },
-                    { candidate_id: "cand_4", 약속상담여부: "대기", datetime: "2026-06-05 15:00:00", result: "초기 상담 예약 성립", next_action: "본부 위치 발송", 장소: "지사 사무실" }
+                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-03 14:00:00", result: "수요일 면담 예약 완료", next_action: "리마인드 문자 전송", 장소: "지사 사무실" },
+                    { candidate_id: "cand_4", 약속상담여부: "대기", datetime: "2026-06-03 17:00:00", result: "초기 상담 예약 성립", next_action: "본부 위치 발송", 장소: "지사 사무실" }
                 ];
                 localStorage.setItem('DB_APPOINTMENTS_V3', JSON.stringify(sampleApts));
             }
@@ -738,6 +744,16 @@
             };
             document.getElementById('main-view-title').innerText = titleMap[viewName] || "파트너스본부 CRM";
 
+            // 플로팅 홈 버튼(FAB) 노출 여부 처리
+            const floatBtn = document.getElementById('floating-home-btn');
+            if (floatBtn) {
+                if (viewName === 'kanban') {
+                    floatBtn.classList.add('hidden');
+                } else {
+                    floatBtn.classList.remove('hidden');
+                }
+            }
+
             renderCurrentView();
         }
 
@@ -769,27 +785,42 @@
         // ==========================================
         function renderKanbanView(parent) {
             const list = getPermittedCandidates();
-            const kpiCompleted = list.filter(c => c.현재단계.includes('입사완료')).length;
-            const kpiOnboarding = list.filter(c => c.현재단계.includes('위촉진행')).length;
-            const kpiRatio = list.length > 0 ? ((kpiCompleted / list.length) * 100).toFixed(1) : 0;
+            
+            // 상단 카드를 '가망후보자', '약속확정', '상담완료', '위촉진행' 프로세스 4대로 교체 (왼쪽 타이틀, 오른쪽 인원 수 정렬 적용)
+            const countStage1 = list.filter(c => c.현재단계.includes('가망후보자')).length;
+            const countStage2 = list.filter(c => c.현재단계.includes('약속확정')).length;
+            const countStage3 = list.filter(c => c.현재단계.includes('상담완료')).length;
+            const countStage4 = list.filter(c => c.현재단계.includes('위촉진행')).length;
 
             let html = `
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                        <span class="text-xs font-bold text-slate-400">전체 후보자</span>
-                        <div class="text-2xl font-black text-slate-800 mt-1">${list.length} <span class="text-xs font-normal text-slate-500">명</span></div>
+                    <div onclick="switchView('stage1')" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-500 cursor-pointer transition-all flex justify-between items-center group">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+                            <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600 transition-colors">가망후보자</span>
+                        </div>
+                        <div class="text-xl font-black text-slate-800">${countStage1} <span class="text-xs font-normal text-slate-400">명</span></div>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                        <span class="text-xs font-bold text-slate-400">이번달 입사</span>
-                        <div class="text-2xl font-black text-emerald-600 mt-1">${kpiCompleted} <span class="text-xs font-normal text-slate-500">명</span></div>
+                    <div onclick="switchView('stage2')" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-500 cursor-pointer transition-all flex justify-between items-center group">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                            <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600 transition-colors">약속확정</span>
+                        </div>
+                        <div class="text-xl font-black text-slate-800">${countStage2} <span class="text-xs font-normal text-slate-400">명</span></div>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                        <span class="text-xs font-bold text-slate-400">위촉진행중</span>
-                        <div class="text-2xl font-black text-indigo-600 mt-1">${kpiOnboarding} <span class="text-xs font-normal text-slate-500">명</span></div>
+                    <div onclick="switchView('stage3')" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-500 cursor-pointer transition-all flex justify-between items-center group">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                            <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600 transition-colors">상담완료</span>
+                        </div>
+                        <div class="text-xl font-black text-slate-800">${countStage3} <span class="text-xs font-normal text-slate-400">명</span></div>
                     </div>
-                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-                        <span class="text-xs font-bold text-slate-400">전환율</span>
-                        <div class="text-2xl font-black text-slate-800 mt-1">${kpiRatio} <span class="text-xs font-normal text-slate-500">%</span></div>
+                    <div onclick="switchView('stage4')" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-500 cursor-pointer transition-all flex justify-between items-center group">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            <span class="text-sm font-bold text-slate-500 group-hover:text-indigo-600 transition-colors">위촉진행</span>
+                        </div>
+                        <div class="text-xl font-black text-slate-800">${countStage4} <span class="text-xs font-normal text-slate-400">명</span></div>
                     </div>
                 </div>
 
@@ -1152,7 +1183,7 @@
                 현재단계: calculatedStage, 
                 stage_updated: new Date().toISOString(),
                 memo,
-                created_at: new Date().toISOString(),
+                created_at: new Date().toISOString().substring(0, 10),
                 위촉담당자: recruiter,
                 예정입사일: "",
                 상담결과: ""
@@ -1654,12 +1685,6 @@
             }
         }
 
-        function updateDraftMemoState(candId, value) {
-            if (docDraftBuffer[candId]) {
-                docDraftBuffer[candId].memo = value;
-            }
-        }
-
         // --- 실시간 일괄 전송 저장 처리 실행 ---
         async function executeSaveDraftDocBatch(candId) {
             const draft = docDraftBuffer[candId];
@@ -1704,7 +1729,7 @@
 
             const modalHtml = `
                 <div id="candidate-edit-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-                    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+                    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
                         <div class="bg-indigo-950 px-6 py-5 text-white flex justify-between items-center shrink-0">
                             <div>
                                 <h3 class="text-sm font-bold">${cand.name} 후보자 상세 정보 관리</h3>
@@ -1872,7 +1897,7 @@
 
             const modalHtml = `
                 <div id="quick-apt-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center">
-                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl">
                         <h4 class="text-sm font-bold text-slate-900">${cand.name} 면담 스케줄 생성</h4>
                         <div class="space-y-3">
                             <input type="datetime-local" id="quick-apt-dt" class="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none">
@@ -1970,7 +1995,7 @@
 
             const modalHtml = `
                 <div id="quick-stage3-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center">
-                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl">
                         <h4 class="text-sm font-bold text-slate-900">${cand.name} 상담 결과 기록</h4>
                         <div class="space-y-3">
                             <div>
