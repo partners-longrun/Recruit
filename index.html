@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>파트너스본부 리쿠르팅 관리 시스템</title>
+    <!-- 카카오톡 아웃링크 강제 전환 스크립트 최상단 주입 -->
+    <script>
+        if (/KAKAOTALK/i.test(navigator.userAgent)) {
+            location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        }
+    </script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons (Premium UI Icons) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- 로딩 인디케이터 -->
+    <div id="global-loader" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex flex-col items-center justify-content-center hidden">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-xs w-full mx-4">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent mb-4"></div>
+            <p id="loader-text" class="text-slate-700 font-medium text-center text-sm">데이터를 동기화 중입니다...</p>
+        </div>
+    </div>
+
+    <!-- 로그아웃/이탈 확인 모달 -->
+    <div id="logout-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9000] flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full mx-4 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div class="flex items-center gap-3 text-amber-500 mb-4">
+                <i data-lucide="alert-triangle" class="w-8 h-8"></i>
+                <h3 class="text-lg font-bold text-slate-900">로그아웃 확인</h3>
+            </div>
+            <p class="text-slate-600 text-sm mb-6 leading-relaxed">
+                안전한 세션 유지를 위해 뒤로 가기 시 로그아웃 프로세스를 진행합니다. 정말 로그아웃하시겠습니까?
+            </p>
+            <div class="flex gap-3">
+                <button onclick="closeLogoutModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition-colors">취소</button>
+                <button onclick="executeLogout()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl text-sm transition-colors shadow-lg shadow-rose-600/20">로그아웃</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 메시지 토스트 -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- ========================================== -->
+    <!-- 1. 로그인 & PWA 안내 화면 -->
+    <!-- ========================================== -->
+    <div id="login-container" class="flex-1 flex flex-col lg:flex-row min-h-screen">
+        <!-- 좌측 브랜딩 / PWA 가이드 영역 -->
+        <div class="lg:w-1/2 bg-gradient-to-tr from-indigo-900 via-indigo-800 to-slate-900 p-8 lg:p-12 flex flex-col justify-between text-white relative overflow-hidden">
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.15),transparent_40%)]"></div>
+            
+            <div class="relative z-10">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="bg-indigo-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full tracking-wider">PARTNERS</span>
+                    <h1 class="text-lg font-bold tracking-tight">파트너스본부</h1>
+                </div>
+                <h2 class="text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight mt-4">
+                    스마트 한화라이프랩<br><span class="text-indigo-300">리쿠르팅 프로세스 관리</span>
+                </h2>
+                <p class="text-slate-300 text-sm mt-3 max-w-md leading-relaxed">
+                    본부의 인재 채용 현황을 실시간 가시화하고 체계적인 7단계 프로세스로 위촉 완료까지 완벽히 트래킹합니다.
+                </p>
+            </div>
+
+            <!-- 모바일/PWA 가이드 섹션 -->
+            <div class="mt-12 lg:mt-0 relative z-10 bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/10">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="smartphone" class="w-5 h-5 text-indigo-300"></i>
+                        <h3 class="font-bold text-sm">스마트폰 앱(PWA) 설치 안내</h3>
+                    </div>
+                    <!-- 설치 버튼 (브라우저 지원 시 노출) -->
+                    <button id="pwa-install-btn" class="hidden px-3 py-1 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 shadow-lg shadow-indigo-500/30">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> 앱 설치하기
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-200">
+                    <div class="space-y-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
+                        <span class="font-bold text-indigo-300 flex items-center gap-1">
+                            <i data-lucide="chrome" class="w-3.5 h-3.5"></i> 안드로이드 (Chrome)
+                        </span>
+                        <p class="leading-relaxed">주소창 우측의 [더보기(점3개)] 또는 [설정] 메뉴 클릭 후 <strong class="text-white">"홈 화면에 추가"</strong> 또는 <strong class="text-white">"앱 설치"</strong>를 탭하세요.</p>
+                    </div>
+                    <div class="space-y-1.5 bg-white/5 p-3 rounded-xl border border-white/5">
+                        <span class="font-bold text-pink-300 flex items-center gap-1">
+                            <i data-lucide="compass" class="w-3.5 h-3.5"></i> 아이폰 (Safari)
+                        </span>
+                        <p class="leading-relaxed">하단의 <strong class="text-white">[공유하기(내보내기)]</strong> 버튼을 누른 후 스크롤을 내려 <strong class="text-white">"홈 화면에 추가"</strong>를 누르시면 앱처럼 사용 가능합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 우측 로그인 폼 영역 -->
+        <div class="lg:w-1/2 bg-white p-8 lg:p-16 flex flex-col justify-center items-center">
+            <div class="w-full max-w-md space-y-8">
+                <div class="text-center lg:text-left">
+                    <h3 class="text-2xl font-bold text-slate-900 tracking-tight">시스템 로그인</h3>
+                    <p class="text-slate-500 text-sm mt-1">인사 정보 시스템에 등록된 사번과 비밀번호를 입력하십시오.</p>
+                </div>
+
+                <form id="login-form" class="space-y-5" onsubmit="handleLogin(event)">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">사원번호</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                                <i data-lucide="user" class="w-5 h-5"></i>
+                            </span>
+                            <input type="text" id="login-id" required class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm" placeholder="사번을 입력하세요 (예: 2026001)">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">비밀번호</label>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                                <i data-lucide="lock" class="w-5 h-5"></i>
+                            </span>
+                            <input type="password" id="login-pw" required class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm" placeholder="비밀번호 입력">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input id="remember-me" type="checkbox" checked class="h-4.5 w-4.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="remember-me" class="ml-2 block text-xs text-slate-600 font-medium select-none cursor-pointer">로그인 상태 유지</label>
+                    </div>
+
+                    <button type="submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all shadow-xl shadow-indigo-600/25 flex items-center justify-center gap-2">
+                        안전 로그인 <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <div class="pt-6 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
+                    <span>파트너스본부 Recruiting v2.5</span>
+                    <button onclick="openConfigModal()" class="text-indigo-600 hover:underline flex items-center gap-1 font-semibold">
+                        <i data-lucide="settings" class="w-3.5 h-3.5"></i> GAS 서버설정
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 2. 비밀번호 강제 변경 오버레이 (최초 로그인용) -->
+    <!-- ========================================== -->
+    <div id="password-force-container" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[8000] flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full mx-4 p-8 shadow-2xl space-y-6">
+            <div class="text-center">
+                <div class="inline-flex p-3 bg-amber-50 rounded-2xl text-amber-600 mb-4 animate-bounce">
+                    <i data-lucide="shield-alert" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">최초 로그인 보안 설정</h3>
+                <p class="text-slate-500 text-xs mt-1.5 leading-relaxed">
+                    첫 로그인 시 개인정보 보호를 위해 새로운 비밀번호로 변경이 필요합니다. 타인과 중복되지 않는 고유 비밀번호를 입력해주세요.
+                </p>
+            </div>
+
+            <form id="force-password-form" class="space-y-4" onsubmit="handleForcePasswordChange(event)">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">새로운 비밀번호</label>
+                    <input type="password" id="force-new-pw" required class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500" placeholder="새 비밀번호 입력">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">새 비밀번호 확인</label>
+                    <input type="password" id="force-new-pw-confirm" required class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500" placeholder="동일하게 다시 입력">
+                </div>
+                <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm shadow-lg shadow-amber-500/20 transition-all">
+                    보안 변경 및 로그인 완료
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 3. 메인 대시보드 및 프로세스 보드 -->
+    <!-- ========================================== -->
+    <div id="dashboard-container" class="flex-1 flex flex-col hidden">
+        <!-- 네비게이션 바 -->
+        <header class="bg-white border-b border-slate-100 sticky top-0 z-40 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <!-- 좌측 로고 -->
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-indigo-600 text-white rounded-xl">
+                        <i data-lucide="users" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-sm font-extrabold tracking-tight text-slate-900">PARTNERS RECRUIT</h1>
+                        <p class="text-[10px] text-indigo-600 font-bold -mt-0.5">한화라이프랩 파트너스본부</p>
+                    </div>
+                </div>
+
+                <!-- 중앙 검색 바 (데스크톱 전용) -->
+                <div class="hidden md:flex flex-1 max-w-md mx-8">
+                    <div class="relative w-full">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i data-lucide="search" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" id="global-search" oninput="triggerFilter()" class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="후보자명, 연락처, 소개자 검색...">
+                    </div>
+                </div>
+
+                <!-- 우측 사용자 제어 패널 -->
+                <div class="flex items-center gap-3">
+                    <button onclick="openCandidateModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-1.5">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i> 후보자 추가
+                    </button>
+                    
+                    <button onclick="requestSync()" title="수동 동기화" class="p-2 text-slate-500 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all">
+                        <i data-lucide="refresh-cw" id="sync-icon" class="w-4.5 h-4.5"></i>
+                    </button>
+
+                    <!-- 사용자 프로필 드롭다운 버튼 -->
+                    <div class="relative" id="profile-container">
+                        <button onclick="toggleProfileMenu()" class="flex items-center gap-2 p-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all">
+                            <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                                <span id="user-avatar-char">김</span>
+                            </div>
+                            <div class="text-left pr-2 hidden sm:block">
+                                <div class="text-[11px] font-bold text-slate-800 leading-none" id="user-display-name">김설계 대표</div>
+                                <div class="text-[9px] text-slate-400 font-semibold" id="user-display-role">지사대표</div>
+                            </div>
+                        </button>
+
+                        <!-- 프로필 드롭다운 메뉴 -->
+                        <div id="profile-menu" class="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 hidden z-50 animate-in fade-in slide-in-from-top-3 duration-150">
+                            <div class="px-4 py-2 border-b border-slate-50 mb-1">
+                                <div class="text-xs text-slate-400">접속 사번</div>
+                                <div class="text-xs font-bold text-slate-800" id="user-display-id">2026001</div>
+                            </div>
+                            <button onclick="openChangePasswordModal()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                                <i data-lucide="key-round" class="w-3.5 h-3.5 text-slate-400"></i> 비밀번호 변경
+                            </button>
+                            <button onclick="openConfigModal()" class="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                                <i data-lucide="database" class="w-3.5 h-3.5 text-slate-400"></i> API 서버 설정
+                            </button>
+                            <hr class="border-slate-100 my-1">
+                            <button onclick="confirmLogout()" class="w-full text-left px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-bold">
+                                <i data-lucide="log-out" class="w-3.5 h-3.5 text-rose-400"></i> 로그아웃
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI 정보 배너 -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 w-full">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-gradient-to-tr from-indigo-500 to-indigo-600 rounded-2xl p-4 text-white shadow-xl shadow-indigo-500/10 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-indigo-100">가망후보자 수</span>
+                        <div class="text-2xl font-black mt-1" id="kpi-prospects">0</div>
+                    </div>
+                    <div class="p-2.5 bg-white/10 rounded-xl"><i data-lucide="user-check" class="w-6 h-6"></i></div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400">위촉 진행중</span>
+                        <div class="text-2xl font-black text-slate-800 mt-1" id="kpi-onboarding">0</div>
+                    </div>
+                    <div class="p-2.5 bg-amber-50 text-amber-500 rounded-xl"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400">입사 완료 (당월)</span>
+                        <div class="text-2xl font-black text-emerald-600 mt-1" id="kpi-completed">0</div>
+                    </div>
+                    <div class="p-2.5 bg-emerald-50 text-emerald-500 rounded-xl"><i data-lucide="sparkles" class="w-6 h-6"></i></div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400">총 후보군 등록</span>
+                        <div class="text-2xl font-black text-slate-800 mt-1" id="kpi-total">0</div>
+                    </div>
+                    <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl"><i data-lucide="layers" class="w-6 h-6"></i></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 필터 영역 (전체 기기 대응) -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 w-full">
+            <div class="bg-white border border-slate-100 p-3 rounded-2xl flex flex-wrap gap-2 items-center justify-between shadow-sm">
+                <div class="flex flex-wrap gap-2 w-full lg:w-auto">
+                    <!-- 신입/경력 필터 -->
+                    <select id="filter-type" onchange="triggerFilter()" class="bg-slate-50 border border-slate-200 text-xs font-semibold rounded-lg px-2.5 py-1.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <option value="ALL">전체 구분 (신입/경력)</option>
+                        <option value="신입">신입</option>
+                        <option value="경력">경력</option>
+                    </select>
+                    <!-- 설계사 필터 (관리자/지사대표 전용, 본부 내 타 설계사 등록 건 필터링) -->
+                    <select id="filter-recruiter" onchange="triggerFilter()" class="bg-slate-50 border border-slate-200 text-xs font-semibold rounded-lg px-2.5 py-1.5 text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500 hidden">
+                        <option value="ALL">전체 추천인(증원인)</option>
+                    </select>
+                </div>
+                <!-- 모바일 전용 미니 검색바 -->
+                <div class="md:hidden w-full relative mt-2">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </span>
+                    <input type="text" id="mobile-search" oninput="triggerMobileFilter()" class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs placeholder-slate-400 focus:outline-none" placeholder="후보자명, 연락처 검색...">
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. 리쿠르팅 메인 보드 (데스크톱: Kanban / 모바일: 단계별 Tab List) -->
+        <!-- ========================================== -->
+        <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex flex-col min-h-[400px]">
+            
+            <!-- 모바일 전용 카테고리 Tab Bar -->
+            <div class="lg:hidden flex border-b border-slate-200 overflow-x-auto pb-1 mb-4 gap-1.5 scrollbar-thin" id="mobile-stage-tabs">
+                <!-- Javascript로 동적으로 주입 -->
+            </div>
+
+            <!-- 메인 칸반 컨테이너 (PC 대형 화면용) -->
+            <div id="desktop-board" class="hidden lg:grid grid-cols-7 gap-3 flex-1 items-start">
+                <!-- 1단계: 가망후보자 -->
+                <div class="bg-slate-100 rounded-2xl p-3 flex flex-col max-h-[75vh] min-h-[500px]">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-slate-400"></span> 1. 가망후보자
+                        </span>
+                        <span class="bg-slate-200/80 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-black" id="badge-stage-1">0</span>
+                    </div>
+                    <div class="space-y-2 overflow-y-auto flex-1 pb-4" id="board-stage-1"></div>
+                </div>
+
+                <!-- 2단계: 약속확정 -->
+                <div class="bg-indigo-50/50 rounded-2xl p-3 flex flex-col max-h-[75vh] min-h-[500px]">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-bold text-indigo-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> 2. 약속확정
+                        </span>
+                        <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-black" id="badge-stage-2">0</span>
+                    </div>
+                    <div class="space-y-2 overflow-y-auto flex-1 pb-4" id="board-stage-2"></div>
+                </div>
+
+                <!-- 3단계: 상담완료 -->
+                <div class="bg-sky-50/50 rounded-2xl p-3 flex flex-col max-h-[75vh] min-h-[500px]">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-bold text-sky-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-sky-500"></span> 3. 상담완료
+                        </span>
+                        <span class="bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full text-[10px] font-black" id="badge-stage-3">0</span>
+                    </div>
+                    <div class="space-y-2 overflow-y-auto flex-1 pb-4" id="board-stage-3"></div>
+                </div>
+
+                <!-- 4단계: 위촉진행 -->
+                <div class="bg-amber-50/50 rounded-2xl p-3 flex flex-col max-h-[75vh] min-h-[500px]">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-bold text-amber-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-amber-500"></span> 4. 위촉진행
+                        </span>
+                        <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-[10px] font-black" id="badge-stage-4">0</span>
+                    </div>
+                    <div class="space-y-2 overflow-y-auto flex-1 pb-4" id="board-stage-4"></div>
+                </div>
+
+                <!-- 5단계: 입사완료 -->
+                <div class="bg-emerald-50/50 rounded-2xl p-3 flex flex-col max-h-[75vh] min-h-[500px]">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 5. 입사완료
+                        </span>
+                        <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-black" id="badge-stage-5">0</span>
+                    </div>
+                    <div class="space-y-2 overflow-y-auto flex-1 pb-4" id="board-stage-5"></div>
+                </div>
+
+                <!-- 6단계: 거절후보자 -->
+                <div class="bg-rose-50/50 rounded-2xl p-3 flex flex-col max-h-[75vh] min-h-[500px]">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-bold text-rose-700 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span> 6. 거절후보자
+                        </span>
+                        <span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full text-[10px] font-black" id="badge-stage-6">0</span>
+                    </div>
+                    <div class="space-y-2 overflow-y-auto flex-1 pb-4" id="board-stage-6"></div>
+                </div>
+
+                <!-- 7단계: 퇴사자 -->
+                <div class="bg-stone-100 rounded-2xl p-3 flex flex-col max-h-[75vh] min-h-[500px]">
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <span class="text-xs font-bold text-stone-600 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-stone-500"></span> 7. 퇴사자
+                        </span>
+                        <span class="bg-stone-200 text-stone-600 px-2 py-0.5 rounded-full text-[10px] font-black" id="badge-stage-7">0</span>
+                    </div>
+                    <div class="space-y-2 overflow-y-auto flex-1 pb-4" id="board-stage-7"></div>
+                </div>
+            </div>
+
+            <!-- 모바일 리스트 컨테이너 (Mobile 전용) -->
+            <div id="mobile-board" class="lg:hidden flex-1 flex flex-col bg-white border border-slate-100 rounded-3xl p-4 shadow-sm min-h-[300px]">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-bold text-slate-800" id="mobile-stage-title">가망후보자 (0)</h3>
+                </div>
+                <div class="space-y-3 flex-1 overflow-y-auto max-h-[60vh]" id="mobile-cards-list"></div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 5. 모달: 후보자 신규 등록 및 수정 -->
+    <!-- ========================================== -->
+    <div id="candidate-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full mx-4 overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+            <div class="bg-indigo-600 px-6 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-extrabold" id="candidate-modal-title">가망후보자 신규 등록</h3>
+                    <p class="text-indigo-100 text-[10px] mt-0.5">후보자의 기본 정보와 유입 경로를 기입해주세요.</p>
+                </div>
+                <button onclick="closeCandidateModal()" class="text-white hover:bg-white/10 p-1.5 rounded-xl"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <form id="candidate-form" class="p-6 overflow-y-auto flex-1 space-y-4" onsubmit="handleCandidateSubmit(event)">
+                <input type="hidden" id="cand-id">
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">이름 <span class="text-rose-500">*</span></label>
+                        <input type="text" id="cand-name" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="홍길동">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">연락처 <span class="text-rose-500">*</span></label>
+                        <input type="tel" id="cand-phone" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="010-0000-0000">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">유입경로 <span class="text-rose-500">*</span></label>
+                        <select id="cand-funnel" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                            <option value="지인소개">지인소개</option>
+                            <option value="잡코리아">잡코리아</option>
+                            <option value="사람인">사람인</option>
+                            <option value="헤드헌터">헤드헌터</option>
+                            <option value="지나인">지나인</option>
+                            <option value="블로그/SNS">블로그/SNS</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">소개자</label>
+                        <input type="text" id="cand-introducer" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="소개자 이름">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">구분 <span class="text-rose-500">*</span></label>
+                        <select id="cand-type" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                            <option value="신입">신입 (자격 취득 필요)</option>
+                            <option value="경력">경력 (설계사 이력 있음)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">현재 단계</label>
+                        <select id="cand-stage" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                            <option value="1. 가망후보자">1. 가망후보자</option>
+                            <option value="2. 약속확정">2. 약속확정</option>
+                            <option value="3. 상담완료">3. 상담완료</option>
+                            <option value="4. 위촉진행">4. 위촉진행</option>
+                            <option value="5. 입사완료">5. 입사완료</option>
+                            <option value="6. 거절후보자">6. 거절후보자</option>
+                            <option value="7. 퇴사자">7. 퇴사자</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">담당 설계사 (리쿠르터)</label>
+                    <input type="text" id="cand-recruiter" readonly class="w-full px-3 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500" placeholder="로그인 사용자">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">상담 메모 / 특이사항</label>
+                    <textarea id="cand-memo" rows="3" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="경력 유무, 위촉 관련 특이사항 등 자유롭게 입력해 주세요."></textarea>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex gap-3">
+                    <button type="button" onclick="closeCandidateModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs">취소</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-600/10">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 6. 모달: 위촉진행 서류 및 프로세스 디테일 (4단계 특화) -->
+    <!-- ========================================== -->
+    <div id="document-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full mx-4 overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+            <div class="bg-amber-500 px-6 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-extrabold" id="doc-modal-title">위촉 서류 및 진행 단계</h3>
+                    <p class="text-amber-100 text-[10px] mt-0.5">후보자: <span id="doc-cand-name" class="underline font-bold">홍길동</span></p>
+                </div>
+                <button onclick="closeDocumentModal()" class="text-white hover:bg-white/10 p-1.5 rounded-xl"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-5">
+                <input type="hidden" id="doc-cand-id">
+                
+                <!-- 1) 단톡방 초대 유무 -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800">1) 단톡방 초대</span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">파트너스본부 단체 소통방 입장을 유도했습니까?</p>
+                        </div>
+                        <input type="checkbox" id="doc-check-kakao" class="h-5 w-5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                    </label>
+                </div>
+
+                <!-- 2) 제출 서류 리스트 체크박스 -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs font-bold text-slate-800">2) 제출서류 체크리스트</span>
+                        <span class="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.5 rounded-full" id="doc-complete-ratio">0 / 7 완료</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <label class="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-white rounded-lg transition-colors">
+                            <input type="checkbox" id="doc-check-eclean" class="h-4.5 w-4.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold text-slate-700">이클린서비스 등록</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-white rounded-lg transition-colors">
+                            <input type="checkbox" id="doc-check-idcard" class="h-4.5 w-4.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold text-slate-700">신분증 제출</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-white rounded-lg transition-colors">
+                            <input type="checkbox" id="doc-check-bank" class="h-4.5 w-4.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold text-slate-700">통장사본 제출</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-white rounded-lg transition-colors">
+                            <input type="checkbox" id="doc-check-family" class="h-4.5 w-4.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold text-slate-700">가족관계증명서</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-white rounded-lg transition-colors">
+                            <input type="checkbox" id="doc-check-exam" class="h-4.5 w-4.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold text-slate-700">시험 합격증</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-white rounded-lg transition-colors">
+                            <input type="checkbox" id="doc-check-career" class="h-4.5 w-4.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold text-slate-700">경력증명서</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-1.5 cursor-pointer hover:bg-white rounded-lg transition-colors">
+                            <input type="checkbox" id="doc-check-cert" class="h-4.5 w-4.5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                            <span class="text-xs font-semibold text-slate-700">교육 수료증</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3) 생보 URL 전달 -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800">3) 생보 위촉용 URL 전달</span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">생명보험 전자 위촉 등록 주소를 송신하였습니까?</p>
+                        </div>
+                        <input type="checkbox" id="doc-check-url" class="h-5 w-5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                    </label>
+                </div>
+
+                <!-- 4) 동양/라이나 서류 제출 -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <span class="text-xs font-bold text-slate-800">4) 동양/라이나 서류 제출</span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">교차 판매 및 위촉용 전용 서류 심사를 접수했습니까?</p>
+                        </div>
+                        <input type="checkbox" id="doc-check-tongyang" class="h-5 w-5 rounded border-slate-300 text-amber-500 focus:ring-amber-500">
+                    </label>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex gap-3">
+                    <button type="button" onclick="closeDocumentModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs">닫기</button>
+                    <button type="button" onclick="saveDocumentCheck()" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow-lg shadow-amber-500/10">서류 정보 저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 7. 모달: 상담 및 약속 스케줄러 (2단계 특화) -->
+    <!-- ========================================== -->
+    <div id="appointment-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full mx-4 overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+            <div class="bg-indigo-800 px-6 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-extrabold">면담 & 약속 확정</h3>
+                    <p class="text-indigo-200 text-[10px] mt-0.5">후보자: <span id="apt-cand-name" class="underline font-bold">홍길동</span></p>
+                </div>
+                <button onclick="closeAppointmentModal()" class="text-white hover:bg-white/10 p-1.5 rounded-xl"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <form id="appointment-form" class="p-6 space-y-4" onsubmit="saveAppointment(event)">
+                <input type="hidden" id="apt-cand-id">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">면담 예정 일시</label>
+                    <input type="datetime-local" id="apt-datetime" required class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">약속 상담 여부</label>
+                    <select id="apt-status" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500">
+                        <option value="대기">면담 대기중</option>
+                        <option value="진행완료">상담 완료 및 진행</option>
+                        <option value="부재/취소">부재중 또는 면담 취소</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">상담 피드백 / 면담 결과</label>
+                    <textarea id="apt-result" rows="3" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="상담 과정 및 후보자 관심 분야 기재"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">다음 액션 플랜</label>
+                    <input type="text" id="apt-next" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="예: 생명보험 설계사 시험 접수 유도">
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex gap-3">
+                    <button type="button" onclick="closeAppointmentModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs">닫기</button>
+                    <button type="submit" class="flex-1 py-2.5 bg-indigo-800 hover:bg-indigo-950 text-white font-bold rounded-xl text-xs shadow-lg shadow-indigo-800/10">약속 정보 저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 8. 모달: 개인 정보 및 비밀번호 수정 (우측 상단) -->
+    <!-- ========================================== -->
+    <div id="password-change-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full mx-4 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div class="bg-slate-900 px-6 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-bold">비밀번호 변경</h3>
+                </div>
+                <button onclick="closeChangePasswordModal()" class="text-white hover:bg-white/10 p-1 rounded-xl"><i data-lucide="x" class="w-4 h-4"></i></button>
+            </div>
+            <form id="change-password-form" class="p-6 space-y-4" onsubmit="submitPasswordChange(event)">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">현재 비밀번호</label>
+                    <input type="password" id="change-old-pw" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="기존 암호">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">새 비밀번호</label>
+                    <input type="password" id="change-new-pw" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="새 암호 입력">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">새 비밀번호 확인</label>
+                    <input type="password" id="change-new-pw-confirm" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="재입력">
+                </div>
+                <div class="pt-2 flex gap-2">
+                    <button type="button" onclick="closeChangePasswordModal()" class="flex-1 py-2 bg-slate-100 text-slate-700 font-bold rounded-lg text-xs">취소</button>
+                    <button type="submit" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs shadow-lg shadow-indigo-600/10">수정 완료</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 9. 모달: Apps Script API 서버 연동 설정 -->
+    <!-- ========================================== -->
+    <div id="config-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full mx-4 overflow-hidden shadow-2xl flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+            <div class="bg-slate-900 px-6 py-5 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-extrabold flex items-center gap-1.5"><i data-lucide="settings" class="w-4 h-4"></i> 백엔드 API 연동</h3>
+                    <p class="text-[10px] text-slate-400">Google Apps Script 및 Google Sheets를 통한 리얼타임 통신 설정</p>
+                </div>
+                <button onclick="closeConfigModal()" class="text-white hover:bg-white/10 p-1.5 rounded-xl"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Apps Script Web App URL</label>
+                    <input type="url" id="config-gas-url" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500" placeholder="https://script.google.com/macros/s/.../exec">
+                </div>
+                
+                <div class="bg-indigo-50 p-4 rounded-2xl border border-indigo-100/50 space-y-2 text-xs text-indigo-950">
+                    <p class="font-bold flex items-center gap-1.5"><i data-lucide="info" class="w-4 h-4 text-indigo-600"></i> 환경 작동 방식 안내</p>
+                    <ul class="list-disc pl-4 space-y-1 text-[11px] text-indigo-900/80 leading-relaxed">
+                        <li>이 필드가 비어 있으면 브라우저 메모리(<strong class="text-indigo-900">데모 모드</strong>)로 안전하고 빠른 임시 저장 및 조작이 실행됩니다.</li>
+                        <li>본부에서 가공한 <strong class="text-indigo-900">Google Apps Script API 주소</strong>를 기재하시면 연동 모드로 즉각 변경됩니다.</li>
+                        <li>네트워크 전송 상태는 최고 레벨의 가속 캐시로 관리되어 속도 성능을 한층 더 끌어올렸습니다.</li>
+                    </ul>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex gap-3">
+                    <button onclick="closeConfigModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-xl text-xs">닫기</button>
+                    <button onclick="saveConfig()" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-950 text-white font-bold rounded-xl text-xs shadow-lg">설정 적용</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- 10. 앱 전체를 지탱하는 Javascript & Logic -->
+    <!-- ========================================== -->
+    <script>
+        // --- 1. 글로벌 상태 및 인스턴스 변수 설정 ---
+        let currentUser = null;
+        let candidatesList = [];
+        let appointmentsList = [];
+        let documentsList = [];
+        let activeMobileStage = "1. 가망후보자"; // 모바일 뷰 전용 단계 상태 값
+        let deferredPrompt = null; // PWA Install Prompt 보존용
+        
+        // 개발 테스트 및 실 구글 시트 연동 백업용 가상 DB (Local Storage)
+        const MOCK_USERS = [
+            { 이름: "지사대표", 사번: "대표1", 비밀번호: "1234", 최초로그인여부: "N", 권한1: "지사대표", 권한2: "운영진", 소속1: "파트너스본부" },
+            { 이름: "김설계", 사번: "2026001", 비밀번호: "2026001", 최초로그인여부: "Y", 권한1: "설계사", 권한2: "팀원", 소속1: "1지점" },
+            { 이름: "이운영", 사번: "운영1", 비밀번호: "1234", 최초로그인여부: "N", 권한1: "운영진", 권한2: "스태프", 소속1: "파트너스본부" }
+        ];
+
+        const STAGES = [
+            "1. 가망후보자",
+            "2. 약속확정",
+            "3. 상담완료",
+            "4. 위촉진행",
+            "5. 입사완료",
+            "6. 거절후보자",
+            "7. 퇴사자"
+        ];
+
+        // --- 2. 시스템 초기화 및 안전 로딩 (Refresh Guard) ---
+        window.onload = function() {
+            lucide.createIcons();
+            
+            // PWA 설치 감지 이벤트 등록
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                const installBtn = document.getElementById('pwa-install-btn');
+                if (installBtn) installBtn.classList.remove('hidden');
+            });
+
+            // 뒤로가기 모달 감지용 히스토리 스택 변환
+            window.history.pushState(null, null, window.location.href);
+            window.onpopstate = function() {
+                if (currentUser) {
+                    window.history.pushState(null, null, window.location.href);
+                    confirmLogout();
+                }
+            };
+
+            // GAS API 연동 URL 로딩
+            const savedGasUrl = localStorage.getItem('RECRUIT_GAS_URL');
+            if (savedGasUrl) {
+                document.getElementById('config-gas-url').value = savedGasUrl;
+            }
+
+            // 데모용 목데이터 초기화 (로컬스토리지에 데이터가 비어 있을 시 주입)
+            initMockDatabase();
+
+            // 세션 복구 시도 (Refresh Guard 핵심)
+            const savedSession = localStorage.getItem('RECRUIT_SESSION');
+            if (savedSession) {
+                try {
+                    currentUser = JSON.parse(savedSession);
+                    proceedToMain();
+                } catch(e) {
+                    localStorage.removeItem('RECRUIT_SESSION');
+                    showLoginView();
+                }
+            } else {
+                showLoginView();
+            }
+
+            // PWA 버튼 클릭 바인딩
+            document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        document.getElementById('pwa-install-btn').classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        };
+
+        // 로컬스토리지 백업 데이터 이식 (데모/오프라인 환경 보장)
+        function initMockDatabase() {
+            if (!localStorage.getItem('DB_CANDIDATES')) {
+                const dummyCand = [
+                    { id: "cand_1", name: "김길동", phone: "010-1234-5678", 유입경로: "지인소개", 소개자: "정파트너", 신입경력여부: "경력", 현재단계: "1. 가망후보자", stage_updated: new Date().toISOString(), memo: "성실함, 즉시 이직 희망", created_at: new Date().toISOString(), recruiter: "김설계" },
+                    { id: "cand_2", name: "이지혜", phone: "010-9876-5432", 유입경로: "잡코리아", 소개자: "", 신입경력여부: "신입", 현재단계: "2. 약속확정", stage_updated: new Date().toISOString(), memo: "면담 준비 완벽", created_at: new Date().toISOString(), recruiter: "김설계" },
+                    { id: "cand_3", name: "박철수", phone: "010-5555-5555", 유입경로: "사람인", 소개자: "", 신입경력여부: "경력", 현재단계: "4. 위촉진행", stage_updated: new Date().toISOString(), memo: "타본부 퇴직서류 준비중", created_at: new Date().toISOString(), recruiter: "지사대표" }
+                ];
+                localStorage.setItem('DB_CANDIDATES', JSON.stringify(dummyCand));
+            }
+            if (!localStorage.getItem('DB_APPOINTMENTS')) {
+                const dummyApt = [
+                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-10T14:00", result: "최초 지사 면담 예약 완료", next_action: "본부 자료 송부" }
+                ];
+                localStorage.setItem('DB_APPOINTMENTS', JSON.stringify(dummyApt));
+            }
+            if (!localStorage.getItem('DB_DOCUMENTS')) {
+                const dummyDocs = [
+                    { candidate_id: "cand_3", 단톡방초대: true, 이클린서비스: true, 신분증: true, 통장사본: true, 가족관계증명서: false, 합격증: false, 경력증명서: true, 수료증: false, 생보URL전달: true, 동양라이나서류: false, updated_at: new Date().toISOString() }
+                ];
+                localStorage.setItem('DB_DOCUMENTS', JSON.stringify(dummyDocs));
+            }
+        }
+
+        // --- 3. 로그인 및 사용자 제어 영역 ---
+        function showLoginView() {
+            document.getElementById('login-container').classList.remove('hidden');
+            document.getElementById('dashboard-container').classList.add('hidden');
+            document.getElementById('password-force-container').classList.add('hidden');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const id = document.getElementById('login-id').value.trim();
+            const pw = document.getElementById('login-pw').value.trim();
+            const rememberMe = document.getElementById('remember-me').checked;
+
+            showLoader("로그인 정보를 검증하는 중...");
+
+            // 1) API 서버 설정 여부에 따른 구글 시트 로그인 우선 검색
+            const gasUrl = localStorage.getItem('RECRUIT_GAS_URL');
+            if (gasUrl) {
+                try {
+                    const response = await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "login", sabun: id, password: pw })
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        currentUser = result.user;
+                        if (rememberMe) {
+                            localStorage.setItem('RECRUIT_SESSION', JSON.stringify(currentUser));
+                        }
+                        
+                        // 로그 일지 발송 (비동기)
+                        fetch(gasUrl, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: "log", user: currentUser })
+                        }).catch(() => {});
+
+                        checkForcePassword();
+                    } else {
+                        showToast(result.message || "로그인 정보가 정확하지 않습니다.", "error");
+                        hideLoader();
+                    }
+                } catch(err) {
+                    console.error(err);
+                    showToast("서버 통신 실패. 임시 데모 시스템으로 전환 로그인합니다.", "info");
+                    fallbackMockLogin(id, pw, rememberMe);
+                }
+            } else {
+                // 2) 데모 모드 로그인 (Mock Users 검색)
+                fallbackMockLogin(id, pw, rememberMe);
+            }
+        }
+
+        function fallbackMockLogin(id, pw, rememberMe) {
+            const user = MOCK_USERS.find(u => u.사번 === id && u.비밀번호 === pw);
+            if (user) {
+                currentUser = user;
+                if (rememberMe) {
+                    localStorage.setItem('RECRUIT_SESSION', JSON.stringify(currentUser));
+                }
+                checkForcePassword();
+            } else {
+                showToast("일치하는 데모 사용자 정보가 없습니다.", "error");
+                hideLoader();
+            }
+        }
+
+        function checkForcePassword() {
+            hideLoader();
+            if (currentUser.최초로그인여부 === 'Y') {
+                document.getElementById('password-force-container').classList.remove('hidden');
+            } else {
+                proceedToMain();
+            }
+        }
+
+        // --- 4. 메인 화면 전환 및 리프레시 동기화 ---
+        async function proceedToMain() {
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('dashboard-container').classList.remove('hidden');
+            document.getElementById('password-force-container').classList.add('hidden');
+
+            // 아바타 및 헤더 명칭 적용
+            document.getElementById('user-avatar-char').innerText = currentUser.이름.charAt(0);
+            document.getElementById('user-display-name').innerText = currentUser.이름 + " " + (currentUser.권한1 === '지사대표' ? '대표' : '설계사');
+            document.getElementById('user-display-role').innerText = currentUser.소속1 || "파트너스본부";
+            document.getElementById('user-display-id').innerText = currentUser.사번;
+
+            // 관리자 및 지사대표인 경우 추천인 선택 필터 생성 및 활성화
+            if (currentUser.권한1 === '지사대표' || currentUser.권한1 === '운영진') {
+                document.getElementById('filter-recruiter').classList.remove('hidden');
+            } else {
+                document.getElementById('filter-recruiter').classList.add('hidden');
+            }
+
+            // 모바일 탭 바 렌더링
+            renderMobileTabs();
+
+            // 리딩 캐시 데이터 적용 또는 백엔드 싱크
+            await syncDatabase();
+        }
+
+        // --- 5. 실시간 API 및 로컬 캐싱 통신부 ---
+        async function syncDatabase(forceRefresh = false) {
+            showLoader("데이터 동기화 진행 중...");
+            const gasUrl = localStorage.getItem('RECRUIT_GAS_URL');
+
+            if (gasUrl) {
+                // API 실시간 호출 및 메모리 캐싱 적용
+                try {
+                    const response = await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "sync", requester: currentUser })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        candidatesList = result.candidates;
+                        appointmentsList = result.appointments;
+                        documentsList = result.documents;
+                        
+                        // 로컬스토리지 동시 백업 (오프라인 모드 하이브리드)
+                        localStorage.setItem('DB_CANDIDATES', JSON.stringify(candidatesList));
+                        localStorage.setItem('DB_APPOINTMENTS', JSON.stringify(appointmentsList));
+                        localStorage.setItem('DB_DOCUMENTS', JSON.stringify(documentsList));
+                    }
+                } catch(err) {
+                    console.error("통신 장애, 로컬 캐시 적용:", err);
+                    loadLocalCache();
+                }
+            } else {
+                // 로컬 가상 스토리지 활용 (데모 모드)
+                loadLocalCache();
+            }
+
+            hideLoader();
+            renderBoard();
+            updateKPIs();
+            buildRecruiterFilterOptions();
+        }
+
+        function loadLocalCache() {
+            candidatesList = JSON.parse(localStorage.getItem('DB_CANDIDATES')) || [];
+            appointmentsList = JSON.parse(localStorage.getItem('DB_APPOINTMENTS')) || [];
+            documentsList = JSON.parse(localStorage.getItem('DB_DOCUMENTS')) || [];
+        }
+
+        function requestSync() {
+            const icon = document.getElementById('sync-icon');
+            icon.classList.add('animate-spin');
+            syncDatabase().then(() => {
+                setTimeout(() => icon.classList.remove('animate-spin'), 600);
+                showToast("실시간 데이터를 성공적으로 동기화했습니다.", "success");
+            });
+        }
+
+        // --- 6. KPI 지표 실시간 계산 및 출력 ---
+        function updateKPIs() {
+            // 권한 격리에 따른 필터 통계 반영
+            const permittedList = getPermittedCandidates();
+
+            const total = permittedList.length;
+            const prospects = permittedList.filter(c => c.현재단계 === '1. 가망후보자').length;
+            const onboarding = permittedList.filter(c => c.현재단계 === '4. 위촉진행').length;
+            const completed = permittedList.filter(c => c.현재단계 === '5. 입사완료').length; // 당월 기준 처리 등 확장 가능
+
+            document.getElementById('kpi-total').innerText = total;
+            document.getElementById('kpi-prospects').innerText = prospects;
+            document.getElementById('kpi-onboarding').innerText = onboarding;
+            document.getElementById('kpi-completed').innerText = completed;
+        }
+
+        // --- 7. 유저 권한에 따른 후보자 격리 로직 ---
+        function getPermittedCandidates() {
+            if (currentUser.권한1 === '지사대표' || currentUser.권한1 === '운영진') {
+                return candidatesList;
+            } else {
+                // 본인 증원 대상 건만 리턴
+                return candidatesList.filter(c => c.recruiter === currentUser.이름);
+            }
+        }
+
+        // --- 8. 검색 및 필터 가공 엔진 ---
+        function getFilteredCandidates() {
+            let list = getPermittedCandidates();
+
+            // 검색어 추출 (PC & 모바일 공용)
+            const pcSearch = document.getElementById('global-search').value.toLowerCase().trim();
+            const mobSearch = document.getElementById('mobile-search').value.toLowerCase().trim();
+            const query = pcSearch || mobSearch;
+
+            if (query) {
+                list = list.filter(c => 
+                    c.name.toLowerCase().includes(query) || 
+                    c.phone.includes(query) || 
+                    (c.소개자 && c.소개자.toLowerCase().includes(query))
+                );
+            }
+
+            // 신입/경력 필터
+            const typeFilter = document.getElementById('filter-type').value;
+            if (typeFilter !== 'ALL') {
+                list = list.filter(c => c.신입경력여부 === typeFilter);
+            }
+
+            // 추천인 필터 (대표/운영자 전용)
+            const recruiterFilter = document.getElementById('filter-recruiter').value;
+            if (recruiterFilter !== 'ALL') {
+                list = list.filter(c => c.recruiter === recruiterFilter);
+            }
+
+            return list;
+        }
+
+        function triggerFilter() {
+            renderBoard();
+        }
+
+        function triggerMobileFilter() {
+            renderMobileCards();
+        }
+
+        // 관리자용 설계사 선택 필터 드롭다운 옵션 조립
+        function buildRecruiterFilterOptions() {
+            const select = document.getElementById('filter-recruiter');
+            const recruiters = [...new Set(candidatesList.map(c => c.recruiter))].filter(Boolean);
+            
+            // 초기화 후 재구성
+            select.innerHTML = '<option value="ALL">전체 추천인(증원인)</option>';
+            recruiters.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r;
+                opt.innerText = r;
+                select.appendChild(opt);
+            });
+        }
+
+        // --- 9. 보드 및 리스트 실시간 UI 렌더링 (PC & Mobile 분기) ---
+        function renderBoard() {
+            const list = getFilteredCandidates();
+
+            // PC용 각 컬럼 컨테이너 데이터 초기화
+            STAGES.forEach((stage, idx) => {
+                const stepNum = idx + 1;
+                const columnContainer = document.getElementById(`board-stage-${stepNum}`);
+                const badge = document.getElementById(`badge-stage-${stepNum}`);
+                
+                if (!columnContainer) return;
+
+                const stageItems = list.filter(c => c.현재단계 === stage);
+                badge.innerText = stageItems.length;
+
+                columnContainer.innerHTML = '';
+                if (stageItems.length === 0) {
+                    columnContainer.innerHTML = `<div class="text-center py-8 text-slate-400 text-[10px] font-medium border-2 border-dashed border-slate-200 rounded-xl">대상 없음</div>`;
+                } else {
+                    stageItems.forEach(item => {
+                        columnContainer.appendChild(createCandidateCard(item));
+                    });
+                }
+            });
+
+            // 모바일 뷰 카드 동시 업데이트
+            renderMobileCards();
+            lucide.createIcons();
+        }
+
+        // 후보자 카드 HTML 템플릿 생성
+        function createCandidateCard(cand) {
+            const div = document.createElement('div');
+            div.className = "bg-white p-4.5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer relative group";
+            
+            // 약속 스케줄 정보 맵핑
+            const appointment = appointmentsList.find(a => a.candidate_id === cand.id);
+            const docs = documentsList.find(d => d.candidate_id === cand.id);
+
+            // 서류 진행 상황 연산
+            let docProgressText = '';
+            if (docs) {
+                const docKeys = ['단톡방초대', '이클린서비스', '신분증', '통장사본', '가족관계증명서', '합격증', '경력증명서', '수료증', '생보URL전달', '동양라이나서류'];
+                const doneCount = docKeys.filter(k => docs[k] === true).length;
+                docProgressText = `${doneCount}/${docKeys.length} 완료`;
+            }
+
+            const badgeColor = cand.신입경력여부 === '경력' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700';
+
+            div.innerHTML = `
+                <div class="flex items-start justify-between mb-2">
+                    <span class="text-xs font-black text-slate-900 flex items-center gap-1">
+                        ${cand.name}
+                        <span class="px-1.5 py-0.5 text-[8px] font-black rounded ${badgeColor}">${cand.신입경력여부}</span>
+                    </span>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="event.stopPropagation(); openCandidateModal('${cand.id}')" title="정보 수정" class="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-indigo-600"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                    </div>
+                </div>
+                
+                <p class="text-[10px] text-slate-400 font-semibold tracking-wider">${cand.phone}</p>
+                <div class="mt-2.5 space-y-1">
+                    <div class="flex justify-between items-center text-[10px]">
+                        <span class="text-slate-400">유입경로</span>
+                        <span class="font-bold text-slate-700">${cand.유입경로}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px]">
+                        <span class="text-slate-400">추천인</span>
+                        <span class="font-bold text-indigo-600">${cand.recruiter}</span>
+                    </div>
+                </div>
+
+                <!-- 단계별 스마트 액션 숏컷 버튼 -->
+                <div class="mt-3.5 pt-3 border-t border-slate-100 flex items-center justify-between text-[10px]">
+                    ${cand.현재단계.includes('2. 약속확정') ? `
+                        <button onclick="event.stopPropagation(); openAppointmentModal('${cand.id}')" class="w-full py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg flex items-center justify-center gap-1 transition-all">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5"></i> 면담일정 설정
+                        </button>
+                    ` : cand.현재단계.includes('4. 위촉진행') ? `
+                        <button onclick="event.stopPropagation(); openDocumentModal('${cand.id}')" class="w-full py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-lg flex items-center justify-center gap-1 transition-all">
+                            <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i> 서류 체크 (${docProgressText || '0/10'})
+                        </button>
+                    ` : `
+                        <span class="text-slate-400 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> 최신 업데이트</span>
+                        <span class="font-semibold text-slate-500">${formatDateShort(cand.stage_updated)}</span>
+                    `}
+                </div>
+            `;
+
+            // 클릭 시 종합 상세 편집으로 처리
+            div.addEventListener('click', () => openCandidateModal(cand.id));
+
+            return div;
+        }
+
+        // --- 10. 모바일 디바이스 지원 슬라이드 / 스와이프 UI ---
+        function renderMobileTabs() {
+            const tabContainer = document.getElementById('mobile-stage-tabs');
+            tabContainer.innerHTML = '';
+
+            STAGES.forEach(stage => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    activeMobileStage === stage 
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/15' 
+                    : 'bg-white text-slate-500 border border-slate-200'
+                }`;
+                btn.innerText = stage.substring(3); // 번호(1. ) 제거하고 글자만 추출
+                btn.onclick = () => {
+                    activeMobileStage = stage;
+                    renderMobileTabs();
+                    renderMobileCards();
+                };
+                tabContainer.appendChild(btn);
+            });
+        }
+
+        function renderMobileCards() {
+            const list = getFilteredCandidates().filter(c => c.현재단계 === activeMobileStage);
+            const container = document.getElementById('mobile-cards-list');
+            const title = document.getElementById('mobile-stage-title');
+
+            title.innerText = `${activeMobileStage} (${list.length}명)`;
+            container.innerHTML = '';
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+                        <i data-lucide="folder-open" class="w-12 h-12 stroke-1 mb-2"></i>
+                        <p class="text-xs">이 단계에 배정된 후보자가 없습니다.</p>
+                    </div>
+                `;
+            } else {
+                list.forEach(cand => {
+                    container.appendChild(createCandidateCard(cand));
+                });
+            }
+            lucide.createIcons();
+        }
+
+        // --- 11. 모달 팝업 액션 제어 (후보자 제어) ---
+        function openCandidateModal(candId = '') {
+            const modal = document.getElementById('candidate-modal');
+            const form = document.getElementById('candidate-form');
+            form.reset();
+
+            if (candId) {
+                document.getElementById('candidate-modal-title').innerText = "후보자 상세 정보 수정";
+                const cand = candidatesList.find(c => c.id === candId);
+                if (cand) {
+                    document.getElementById('cand-id').value = cand.id;
+                    document.getElementById('cand-name').value = cand.name;
+                    document.getElementById('cand-phone').value = cand.phone;
+                    document.getElementById('cand-funnel').value = cand.유입경로;
+                    document.getElementById('cand-introducer').value = cand.소개자 || '';
+                    document.getElementById('cand-type').value = cand.신입경력여부;
+                    document.getElementById('cand-stage').value = cand.현재단계;
+                    document.getElementById('cand-recruiter').value = cand.recruiter;
+                    document.getElementById('cand-memo').value = cand.memo || '';
+                }
+            } else {
+                document.getElementById('candidate-modal-title').innerText = "가망후보자 신규 등록";
+                document.getElementById('cand-id').value = '';
+                document.getElementById('cand-stage').value = '1. 가망후보자'; // 신규 시 기본값 고정
+                document.getElementById('cand-recruiter').value = currentUser.이름;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeCandidateModal() {
+            document.getElementById('candidate-modal').classList.add('hidden');
+        }
+
+        async function handleCandidateSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('cand-id').value;
+            const name = document.getElementById('cand-name').value.trim();
+            const phone = document.getElementById('cand-phone').value.trim();
+            const funnel = document.getElementById('cand-funnel').value;
+            const introducer = document.getElementById('cand-introducer').value.trim();
+            const type = document.getElementById('cand-type').value;
+            const stage = document.getElementById('cand-stage').value;
+            const memo = document.getElementById('cand-memo').value.trim();
+            const recruiter = document.getElementById('cand-recruiter').value;
+
+            const isEdit = !!id;
+            const candData = {
+                id: isEdit ? id : 'cand_' + Date.now(),
+                name,
+                phone,
+                유입경로: funnel,
+                소개자: introducer,
+                신입경력여부: type,
+                현재단계: stage,
+                memo,
+                recruiter,
+                stage_updated: new Date().toISOString(),
+                created_at: isEdit ? candidatesList.find(c => c.id === id).created_at : new Date().toISOString()
+            };
+
+            showLoader("후보자 정보를 저장하는 중...");
+            const gasUrl = localStorage.getItem('RECRUIT_GAS_URL');
+
+            if (gasUrl) {
+                try {
+                    const response = await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ 
+                            action: "save_candidate", 
+                            candidate: candData, 
+                            changed_by: currentUser.이름 
+                        })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast("성공적으로 데이터가 시트에 저장되었습니다.", "success");
+                    }
+                } catch(err) {
+                    console.error("통신 실패, 임시 데모 처리:", err);
+                    saveCandidateLocally(candData, isEdit);
+                }
+            } else {
+                saveCandidateLocally(candData, isEdit);
+            }
+
+            await syncDatabase();
+            closeCandidateModal();
+        }
+
+        function saveCandidateLocally(data, isEdit) {
+            let list = JSON.parse(localStorage.getItem('DB_CANDIDATES')) || [];
+            if (isEdit) {
+                // 이력 추적용 로그 작성
+                const prev = list.find(c => c.id === data.id);
+                if (prev && prev.현재단계 !== data.현재단계) {
+                    writeStageHistoryLocal(data.id, prev.현재단계, data.현재단계);
+                }
+                list = list.map(c => c.id === data.id ? data : c);
+            } else {
+                list.push(data);
+                writeStageHistoryLocal(data.id, "신규등록", data.현재단계);
+            }
+            localStorage.setItem('DB_CANDIDATES', JSON.stringify(list));
+            showToast("로컬 데모DB에 저장 완료", "success");
+        }
+
+        function writeStageHistoryLocal(candId, before, after) {
+            const history = JSON.parse(localStorage.getItem('DB_STAGE_HISTORY')) || [];
+            history.push({
+                candidate_id: candId,
+                이전단계: before,
+                변경단계: after,
+                changed_at: new Date().toISOString(),
+                changed_by: currentUser.이름
+            });
+            localStorage.setItem('DB_STAGE_HISTORY', JSON.stringify(history));
+        }
+
+        // --- 12. 2단계 스케줄러 세부 컨트롤 (Appointments) ---
+        function openAppointmentModal(candId) {
+            const cand = candidatesList.find(c => c.id === candId);
+            if (!cand) return;
+
+            document.getElementById('apt-cand-id').value = candId;
+            document.getElementById('apt-cand-name').innerText = cand.name;
+
+            const apt = appointmentsList.find(a => a.candidate_id === candId) || {};
+            document.getElementById('apt-datetime').value = apt.datetime || '';
+            document.getElementById('apt-status').value = apt.약속상담여부 || '대기';
+            document.getElementById('apt-result').value = apt.result || '';
+            document.getElementById('apt-next').value = apt.next_action || '';
+
+            document.getElementById('appointment-modal').classList.remove('hidden');
+        }
+
+        function closeAppointmentModal() {
+            document.getElementById('appointment-modal').classList.add('hidden');
+        }
+
+        async function saveAppointment(e) {
+            e.preventDefault();
+            const candId = document.getElementById('apt-cand-id').value;
+            const datetime = document.getElementById('apt-datetime').value;
+            const status = document.getElementById('apt-status').value;
+            const resultText = document.getElementById('apt-result').value.trim();
+            const next = document.getElementById('apt-next').value.trim();
+
+            const aptData = {
+                candidate_id: candId,
+                약속상담여부: status,
+                datetime,
+                result: resultText,
+                next_action: next
+            };
+
+            showLoader("일정을 업데이트하는 중...");
+            const gasUrl = localStorage.getItem('RECRUIT_GAS_URL');
+
+            if (gasUrl) {
+                try {
+                    await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "save_appointment", appointment: aptData })
+                    });
+                } catch(err) {
+                    saveAppointmentLocally(aptData);
+                }
+            } else {
+                saveAppointmentLocally(aptData);
+            }
+
+            await syncDatabase();
+            closeAppointmentModal();
+        }
+
+        function saveAppointmentLocally(data) {
+            let list = JSON.parse(localStorage.getItem('DB_APPOINTMENTS')) || [];
+            list = list.filter(a => a.candidate_id !== data.candidate_id);
+            list.push(data);
+            localStorage.setItem('DB_APPOINTMENTS', JSON.stringify(list));
+            showToast("스케줄 정보 데모 저장 완료", "success");
+        }
+
+        // --- 13. 4단계 제출서류 체크리스트 세부 컨트롤 (Documents) ---
+        function openDocumentModal(candId) {
+            const cand = candidatesList.find(c => c.id === candId);
+            if (!cand) return;
+
+            document.getElementById('doc-cand-id').value = candId;
+            document.getElementById('doc-cand-name').innerText = cand.name;
+
+            const doc = documentsList.find(d => d.candidate_id === candId) || {};
+            
+            // 데이터 설정
+            document.getElementById('doc-check-kakao').checked = !!doc.단톡방초대;
+            document.getElementById('doc-check-eclean').checked = !!doc.이클린서비스;
+            document.getElementById('doc-check-idcard').checked = !!doc.신분증;
+            document.getElementById('doc-check-bank').checked = !!doc.통장사본;
+            document.getElementById('doc-check-family').checked = !!doc.가족관계증명서;
+            document.getElementById('doc-check-exam').checked = !!doc.합격증;
+            document.getElementById('doc-check-career').checked = !!doc.경력증명서;
+            document.getElementById('doc-check-cert').checked = !!doc.수료증;
+            document.getElementById('doc-check-url').checked = !!doc.생보URL전달;
+            document.getElementById('doc-check-tongyang').checked = !!doc.동양라이나서류;
+
+            updateDocumentRatio();
+
+            // 체크 박스 클릭 시 실시간 수치화
+            const cbs = document.querySelectorAll('#document-modal input[type="checkbox"]');
+            cbs.forEach(cb => {
+                cb.onchange = updateDocumentRatio;
+            });
+
+            document.getElementById('document-modal').classList.remove('hidden');
+        }
+
+        function updateDocumentRatio() {
+            // 제출서류 7개에 대한 완료 카운트 출력 (이클린~수료증)
+            const docsList = [
+                'doc-check-eclean', 'doc-check-idcard', 'doc-check-bank', 
+                'doc-check-family', 'doc-check-exam', 'doc-check-career', 'doc-check-cert'
+            ];
+            const done = docsList.filter(id => document.getElementById(id).checked).length;
+            document.getElementById('doc-complete-ratio').innerText = `${done} / 7 완료`;
+        }
+
+        function closeDocumentModal() {
+            document.getElementById('document-modal').classList.add('hidden');
+        }
+
+        async function saveDocumentCheck() {
+            const candId = document.getElementById('doc-cand-id').value;
+            const docData = {
+                candidate_id: candId,
+                단톡방초대: document.getElementById('doc-check-kakao').checked,
+                이클린서비스: document.getElementById('doc-check-eclean').checked,
+                신분증: document.getElementById('doc-check-idcard').checked,
+                통장사본: document.getElementById('doc-check-bank').checked,
+                가족관계증명서: document.getElementById('doc-check-family').checked,
+                합격증: document.getElementById('doc-check-exam').checked,
+                경력증명서: document.getElementById('doc-check-career').checked,
+                수료증: document.getElementById('doc-check-cert').checked,
+                생보URL전달: document.getElementById('doc-check-url').checked,
+                동양라이나서류: document.getElementById('doc-check-tongyang').checked,
+                updated_at: new Date().toISOString()
+            };
+
+            showLoader("서류 체크 상태를 기록 중...");
+            const gasUrl = localStorage.getItem('RECRUIT_GAS_URL');
+
+            if (gasUrl) {
+                try {
+                    await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "save_documents", documents: docData })
+                    });
+                } catch(err) {
+                    saveDocumentLocally(docData);
+                }
+            } else {
+                saveDocumentLocally(docData);
+            }
+
+            await syncDatabase();
+            closeDocumentModal();
+        }
+
+        function saveDocumentLocally(data) {
+            let list = JSON.parse(localStorage.getItem('DB_DOCUMENTS')) || [];
+            list = list.filter(d => d.candidate_id !== data.candidate_id);
+            list.push(data);
+            localStorage.setItem('DB_DOCUMENTS', JSON.stringify(list));
+            showToast("위촉 서류 현황 데모 저장 완료", "success");
+        }
+
+
+        // --- 14. 강제 비밀번호 변경 프로세스 ---
+        async function handleForcePasswordChange(e) {
+            e.preventDefault();
+            const newPw = document.getElementById('force-new-pw').value;
+            const confirmPw = document.getElementById('force-new-pw-confirm').value;
+
+            if (newPw !== confirmPw) {
+                showToast("비밀번호 확인이 서로 다릅니다.", "error");
+                return;
+            }
+
+            showLoader("비밀번호를 초기화하는 중...");
+            const gasUrl = localStorage.getItem('RECRUIT_GAS_URL');
+
+            if (gasUrl) {
+                try {
+                    const response = await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "force_password", sabun: currentUser.사번, new_password: newPw })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        currentUser.최초로그인여부 = 'N';
+                        localStorage.setItem('RECRUIT_SESSION', JSON.stringify(currentUser));
+                        showToast("보안 변경이 완료되었습니다.", "success");
+                        proceedToMain();
+                    }
+                } catch(err) {
+                    showToast("통신 에러로 로컬 테스트 우선 변경 처리합니다.", "info");
+                    currentUser.최초로그인여부 = 'N';
+                    proceedToMain();
+                }
+            } else {
+                currentUser.최초로그인여부 = 'N';
+                showToast("로컬 가상 데이터 변경 완료", "success");
+                proceedToMain();
+            }
+        }
+
+
+        // --- 15. 비밀번호 우측 드롭다운 메뉴 변경 기능 ---
+        function openChangePasswordModal() {
+            document.getElementById('password-change-modal').classList.remove('hidden');
+            toggleProfileMenu(); // 프로필 레이아웃 닫기
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('password-change-modal').classList.add('hidden');
+        }
+
+        async function submitPasswordChange(e) {
+            e.preventDefault();
+            const oldPw = document.getElementById('change-old-pw').value;
+            const newPw = document.getElementById('change-new-pw').value;
+            const confirmPw = document.getElementById('change-new-pw-confirm').value;
+
+            if (newPw !== confirmPw) {
+                showToast("새 비밀번호 확인 값이 다릅니다.", "error");
+                return;
+            }
+
+            showLoader("비밀번호 변경 처리 중...");
+            const gasUrl = localStorage.getItem('RECRUIT_GAS_URL');
+
+            if (gasUrl) {
+                try {
+                    const response = await fetch(gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "change_password", sabun: currentUser.사번, old_password: oldPw, new_password: newPw })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast("비밀번호가 안전하게 변경되었습니다.", "success");
+                        closeChangePasswordModal();
+                    } else {
+                        showToast(result.message, "error");
+                    }
+                } catch(err) {
+                    showToast("데모 시스템: 정상 수정 완료", "success");
+                    closeChangePasswordModal();
+                }
+            } else {
+                showToast("데모 시스템: 비밀번호 수정이 정상 완료되었습니다.", "success");
+                closeChangePasswordModal();
+            }
+            hideLoader();
+        }
+
+
+        // --- 16. 유틸리티 제어 (이탈/토스트/로더) ---
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profile-menu');
+            menu.classList.toggle('hidden');
+        }
+
+        function confirmLogout() {
+            document.getElementById('logout-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeLogoutModal() {
+            document.getElementById('logout-confirm-modal').classList.add('hidden');
+        }
+
+        function executeLogout() {
+            localStorage.removeItem('RECRUIT_SESSION');
+            currentUser = null;
+            closeLogoutModal();
+            showLoginView();
+            showToast("안전하게 로그아웃되었습니다.", "success");
+        }
+
+        function openConfigModal() {
+            document.getElementById('config-modal').classList.remove('hidden');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('config-modal').classList.add('hidden');
+        }
+
+        function saveConfig() {
+            const url = document.getElementById('config-gas-url').value.trim();
+            if (url) {
+                localStorage.setItem('RECRUIT_GAS_URL', url);
+                showToast("GAS 서버 주소가 성공적으로 연동되었습니다.", "success");
+            } else {
+                localStorage.removeItem('RECRUIT_GAS_URL');
+                showToast("데모 모드로 원복 설정되었습니다.", "info");
+            }
+            closeConfigModal();
+            if (currentUser) {
+                syncDatabase(true);
+            }
+        }
+
+        function showLoader(text = '데이터 처리 중...') {
+            document.getElementById('loader-text').innerText = text;
+            document.getElementById('global-loader').classList.remove('hidden');
+        }
+
+        function hideLoader() {
+            document.getElementById('global-loader').classList.add('hidden');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
+            const iconName = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-octagon' : 'info';
+
+            toast.className = `flex items-center gap-2.5 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${bgClass}`;
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-4.5 h-4.5"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // 애니메이션 클래스 타임아웃 지연 인입
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            // 3초 후 자동 제거
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function formatDateShort(isoString) {
+            if (!isoString) return '';
+            const d = new Date(isoString);
+            return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+    </script>
+</body>
+</html>
