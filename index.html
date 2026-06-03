@@ -1036,6 +1036,158 @@
             `;
         }
 
+        // --- 실시간 타이핑 스마트 포맷터 ---
+        function handlePhoneInput(input) {
+            let val = input.value.replace(/[^0-9]/g, '');
+            if (val.length <= 3) {
+                input.value = val;
+            } else if (val.length <= 7) {
+                input.value = val.substring(0, 3) + '-' + val.substring(3);
+            } else {
+                input.value = val.substring(0, 3) + '-' + val.substring(3, 7) + '-' + val.substring(7, 11);
+            }
+        }
+
+        function handleRrnInput(input) {
+            let val = input.value.replace(/[^0-9]/g, '');
+            if (val.length <= 6) {
+                input.value = val;
+            } else {
+                input.value = val.substring(0, 6) + '-' + val.substring(6, 13);
+            }
+        }
+
+        // --- 등록 UI 인라인 버튼 이벤트 핸들러 ---
+        function selectFunnelBtn(val) {
+            document.getElementById('reg-funnel').value = val;
+            const btns = document.querySelectorAll('.funnel-btn');
+            btns.forEach(btn => {
+                if (btn.innerText.trim() === val) {
+                    btn.className = "funnel-btn flex flex-col items-center justify-center p-3 border border-indigo-500 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold transition-all";
+                } else {
+                    btn.className = "funnel-btn flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl text-xs font-bold hover:border-indigo-500 transition-all";
+                }
+            });
+
+            const container = document.getElementById('introducer-container');
+            if (val === '소개') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function selectTypeBtn(val) {
+            document.getElementById('reg-type').value = val;
+            const btns = document.querySelectorAll('.type-btn');
+            btns.forEach(btn => {
+                if (btn.innerText.trim() === val) {
+                    btn.className = "type-btn py-2.5 border border-indigo-500 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold transition-all";
+                } else {
+                    btn.className = "type-btn py-2.5 border border-slate-200 rounded-xl text-xs font-bold transition-all";
+                }
+            });
+
+            // 신입 선택 시 경력 '신입'으로 자동 세팅 가드 적용
+            if (val === '신입') {
+                document.getElementById('reg-career').value = '신입';
+            }
+        }
+
+        // --- 신규 후보자 저장 액션 (중복 클릭 완벽 차단) ---
+        async function executeCandidateSubmit(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('reg-submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent mr-2"></span> 등록 중...';
+
+            const name = document.getElementById('reg-name').value.trim();
+            const phone = document.getElementById('reg-phone').value.trim();
+            const rrn = document.getElementById('reg-rrn').value.trim();
+            const gender = document.getElementById('reg-gender').value;
+            const funnel = document.getElementById('reg-funnel').value;
+            const introducer = document.getElementById('reg-introducer') ? document.getElementById('reg-introducer').value.trim() : '';
+            const relation = document.getElementById('reg-relation') ? document.getElementById('reg-relation').value : '';
+            const type = document.getElementById('reg-type').value;
+            const job = document.getElementById('reg-job').value.trim();
+            const career = document.getElementById('reg-career').value;
+            const company = document.getElementById('reg-prev-company').value.trim();
+            const recruiter = document.getElementById('reg-recruiter').value;
+            const memo = document.getElementById('reg-memo').value.trim();
+
+            const candId = "cand_" + Date.now();
+
+            // 면담 일정 체크에 따른 자동 단계 지정 프로세스
+            const aptDate = document.getElementById('reg-apt-date').value;
+            const aptTime = document.getElementById('reg-apt-time').value;
+            const aptPlace = document.getElementById('reg-apt-place').value.trim();
+            
+            const hasAppointment = (aptDate && aptTime !== '선택');
+            const calculatedStage = hasAppointment ? "2. 약속확정" : "1. 가망후보자";
+
+            const candData = {
+                id: candId,
+                name,
+                phone,
+                주민등록번호: rrn,
+                성별: gender,
+                유입경로: funnel,
+                소개자: introducer,
+                소개자관계: relation,
+                신입경력여부: type,
+                현직업: job,
+                보험경력: career,
+                이전소속사: company,
+                현재단계: calculatedStage, 
+                stage_updated: new Date().toISOString(),
+                memo,
+                created_at: new Date().toISOString().substring(0, 10),
+                위촉담당자: recruiter,
+                예정입사일: "",
+                상담결과: ""
+            };
+
+            showLoader("후보자를 구글 시트에 등재하는 중...");
+
+            try {
+                const res = await fetch(FIXED_GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "save_candidate", candidate: candData, changed_by: currentUser.이름 })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showToast("성공적으로 후보자가 본부 데이터베이스에 등재되었습니다.", "success");
+                }
+            } catch(e) {
+                saveCandidateLocally(candData);
+            }
+
+            // 면담 예약 데이터 저장 연동
+            if (hasAppointment) {
+                const formattedDateTime = `${aptDate} ${aptTime}:00`; // 'yyyy-mm-dd hh:mm:ss' 형식 보존
+                const aptData = {
+                    candidate_id: candId,
+                    약속상담여부: "대기",
+                    datetime: formattedDateTime,
+                    result: "초기 등록과 동시에 성립된 면담 예약",
+                    next_action: "상담 진행",
+                    장소: aptPlace || "지사 사무실"
+                };
+                await executeSaveAppointment(aptData);
+            }
+
+            await syncDatabase();
+            switchView("kanban");
+        }
+
+        function saveCandidateLocally(data) {
+            let list = JSON.parse(localStorage.getItem('DB_CANDIDATES_V3')) || [];
+            list.push(data);
+            localStorage.setItem('DB_CANDIDATES_V3', JSON.stringify(list));
+            showToast("네트워크 불안정으로 캐시에 로컬 보존되었습니다.", "info");
+        }
+
         // ==========================================
         // [시안 3] 가망후보자 통합 관리 화면
         // ==========================================
@@ -1448,8 +1600,8 @@
                     </div>
 
                     <!-- 하단 일괄 저장 처리 바 -->
-                    <div class="pt-4 border-t border-slate-100 flex justify-between items-center">
-                        <span class="text-xs text-slate-400 font-bold">* 변경사항은 우측 [위촉 정보 일괄 저장] 버튼을 누르셔야 스프레드시트에 영구 저장됩니다.</span>
+                    <div class="pt-4 border-t border-slate-100 flex justify-between items-center font-bold">
+                        <span class="text-xs text-slate-400">* 변경사항은 우측 [위촉 정보 일괄 저장] 버튼을 누르셔야 스프레드시트에 영구 저장됩니다.</span>
                         <div class="flex gap-2 shrink-0">
                             <button onclick="sendLmsNotice('${candId}')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all"><i data-lucide="send" class="w-3.5 h-3.5"></i> 안내 문자</button>
                             <button onclick="executeSaveDraftDocBatch('${candId}')" id="doc-batch-save-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/10"><i data-lucide="save" class="w-3.5 h-3.5"></i> 위촉 정보 일괄 저장</button>
@@ -1952,74 +2104,13 @@
             showToast("보안 세션이 안전하게 종료되었습니다.", "success");
         }
 
-        function openChangePasswordModal() {
-            document.getElementById('password-change-modal').classList.remove('hidden');
+        function showLoader(text = '처리 중...') {
+            document.getElementById('loader-text').innerText = text;
+            document.getElementById('global-loader').classList.remove('hidden');
         }
 
-        function closeChangePasswordModal() {
-            document.getElementById('password-change-modal').classList.add('hidden');
-        }
-
-        async function submitPasswordChange(e) {
-            e.preventDefault();
-            const oldPw = document.getElementById('change-old-pw').value;
-            const newPw = document.getElementById('change-new-pw').value;
-            const confirmPw = document.getElementById('change-new-pw-confirm').value;
-
-            if (newPw !== confirmPw) {
-                showToast("새 비밀번호 확인 값이 다릅니다.", "error");
-                return;
-            }
-
-            const submitBtn = document.getElementById('change-pw-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent mr-2"></span> 변경 중...';
-
-            showLoader("비밀번호 변경 처리 중...");
-
-            try {
-                const response = await fetch(FIXED_GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "change_password", sabun: currentUser.사번, old_password: oldPw, new_password: newPw })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    showToast("비밀번호가 안전하게 변경되었습니다.", "success");
-                    closeChangePasswordModal();
-                } else {
-                    showToast(result.message, "error");
-                }
-            } catch(err) {
-                showToast("데모 시스템: 수정 성공", "success");
-                closeChangePasswordModal();
-            }
-            hideLoader();
-        }
-
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
-            const iconName = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-octagon' : 'info';
-
-            toast.className = `flex items-center gap-2 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${bgClass}`;
-            toast.innerHTML = `
-                <i data-lucide="${iconName}" class="w-4.5 h-4.5"></i>
-                <span>${message}</span>
-            `;
-
-            container.appendChild(toast);
-            lucide.createIcons();
-
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 50);
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+        function hideLoader() {
+            document.getElementById('global-loader').classList.add('hidden');
         }
 
         function formatDateLabel(isoString) {
@@ -2061,6 +2152,39 @@
                     switchView("stage5");
                 });
             }
+        }
+
+        function saveDocCache(doc) {
+            let list = JSON.parse(localStorage.getItem('DB_DOCUMENTS_V3')) || [];
+            list = list.filter(d => d.candidate_id !== doc.candidate_id);
+            list.push(doc);
+            localStorage.setItem('DB_DOCUMENTS_V3', JSON.stringify(list));
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
+            const iconName = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-octagon' : 'info';
+
+            toast.className = `flex items-center gap-2 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto ${bgClass}`;
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-4.5 h-4.5"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     </script>
 </body>
