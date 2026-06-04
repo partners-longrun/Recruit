@@ -224,7 +224,7 @@
                     </button>
                 </div>
 
-                <!-- 메뉴 그룹 (요구사항 반영: '시험 신청' 제거됨) -->
+                <!-- 메뉴 그룹 -->
                 <nav class="p-4 space-y-6">
                     <div>
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block px-2 mb-2">입력</span>
@@ -302,8 +302,8 @@
             </div>
         </aside>
 
-        <!-- 3-3. 메인 콘텐츠 동적 영역 -->
-        <main class="flex-1 flex flex-col min-w-0 pb-20 lg:pb-0 h-screen overflow-hidden">
+        <!-- 3-3. 메인 콘텐츠 동적 영역 - 하단 겹침 방지 여백 패치 완료 -->
+        <main class="flex-1 flex flex-col min-w-0 pb-6 lg:pb-0 h-screen overflow-hidden">
             <!-- 탑 헤더 제어 영역 -->
             <header class="bg-white border-b border-slate-100 h-16 flex items-center justify-between px-6 shrink-0 shadow-sm">
                 <div class="flex items-center gap-2">
@@ -370,7 +370,7 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- 5. 모달: 시험 신청 정보 입력 팝업창 (신규 구현) -->
+    <!-- 5. 모달: 시험 신청 정보 입력 팝업창 -->
     <!-- ========================================== -->
     <div id="exam-register-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center hidden">
         <div class="bg-white rounded-3xl max-w-md w-full mx-4 overflow-hidden shadow-2xl flex flex-col">
@@ -383,7 +383,6 @@
                 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1.5">주민등록번호 <span class="text-rose-500">*</span></label>
-                    <!-- 모바일 숫자 자판 자동 대응 구조 적용 -->
                     <input type="tel" inputmode="numeric" id="exam-rrn" required oninput="handleRrnInput(this)" maxlength="14" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="000000-0000000">
                 </div>
                 <div>
@@ -527,7 +526,6 @@
             }
         }
 
-        // --- 대한민국 KST 기준 2자리 타임스탬프 반환 장치 (지정 요구사항 완벽 충족) ---
         function getLocalTimeString() {
             const d = new Date();
             const yyyy = d.getFullYear();
@@ -539,11 +537,9 @@
             return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
         }
 
-        // --- 날짜 포맷팅 안전 지원 헬퍼 (yyyy-mm-dd hh:mm:ss 포맷 규격 적용) ---
         function formatDateTime(dateStr) {
             if (!dateStr) return '';
             try {
-                // T나 Z같은 포맷 기호 제거 처리
                 let cleaned = dateStr.replace('T', ' ').replace(/\.\d+Z$/, '').replace('Z', '');
                 if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(cleaned)) {
                     return cleaned;
@@ -682,7 +678,6 @@
             document.getElementById('user-display-lbl').innerText = currentUser.이름;
             document.getElementById('user-role-lbl').innerText = currentUser.권한1;
 
-            // 모바일 뷰 강제 로그인 직후 맨 위 스크롤 리셋 장치
             window.scrollTo({ top: 0, behavior: 'instant' });
             document.documentElement.scrollTop = 0;
             document.body.scrollTop = 0;
@@ -769,7 +764,6 @@
             renderCurrentView();
         }
 
-        // --- LNB Drawer 메뉴 모바일 여닫기 제어 ---
         function toggleMobileMenu() {
             const aside = document.getElementById('main-sidebar');
             const backdrop = document.getElementById('sidebar-backdrop');
@@ -785,7 +779,6 @@
         function switchView(viewName) {
             currentView = viewName;
             
-            // 모바일 메뉴 활성화되어 있을 때 닫기 처리
             const aside = document.getElementById('main-sidebar');
             const backdrop = document.getElementById('sidebar-backdrop');
             if (aside && !aside.classList.contains('-translate-x-full')) {
@@ -793,7 +786,6 @@
                 backdrop.classList.add('hidden');
             }
 
-            // LNB 활성화 스타일 갱신
             const menus = ["register", "kanban", "stage1", "stage2", "stage3", "stage4", "stage5", "stage6", "stage7"];
             menus.forEach(m => {
                 const btn = document.getElementById(`btn-menu-${m}`);
@@ -821,7 +813,6 @@
             };
             document.getElementById('main-view-title').innerText = titleMap[viewName] || "파트너스본부 CRM";
 
-            // 플로팅 홈 버튼(FAB) 노출 여부 처리
             const floatBtn = document.getElementById('floating-home-btn');
             if (floatBtn) {
                 if (viewName === 'kanban') {
@@ -831,7 +822,6 @@
                 }
             }
 
-            // 모바일 탭간 네비게이션 시 맨 위 지점부터 강제 뷰포트 스위칭
             window.scrollTo({ top: 0, behavior: 'instant' });
             document.documentElement.scrollTop = 0;
             document.body.scrollTop = 0;
@@ -844,42 +834,16 @@
             renderCurrentView();
         }
 
-        // --- 뷰 렌더링 통합 통제 ---
-        function renderCurrentView() {
-            const wrapper = document.getElementById('view-content-wrapper');
-            wrapper.innerHTML = "";
-
-            if (currentView === "kanban") {
-                renderKanbanView(wrapper);
-            } else if (currentView === "register" || currentView === "register_exam") {
-                renderRegisterView(wrapper, currentView === "register_exam");
-            } else if (currentView === "stage1") {
-                renderStage1ListView(wrapper);
-            } else if (currentView === "stage2") {
-                renderStage2CalendarView(wrapper);
-            } else if (currentView === "stage3") {
-                renderStage3FeedbackView(wrapper);
-            } else if (currentView === "stage4") {
-                renderStage4DocumentView(wrapper);
-            } else {
-                renderGenericStageView(wrapper, currentView);
-            }
-            lucide.createIcons();
-        }
-
-        // ==========================================
-        // [시안 1] 전체 현황 렌더링 (6, 7단계 보드 카드 제외)
-        // ==========================================
         function renderKanbanView(parent) {
             const list = getPermittedCandidates();
             
-            // 상단 카드를 '가망후보자', '약속확정', '상담완료', '위촉진행' 프로세스 4대로 교체 (왼쪽 타이틀, 오른쪽 인원 수 정렬 적용)
             const countStage1 = list.filter(c => c.현재단계.includes('가망후보자')).length;
             const countStage2 = list.filter(c => c.현재단계.includes('약속확정')).length;
             const countStage3 = list.filter(c => c.현재단계.includes('상담완료')).length;
             const countStage4 = list.filter(c => c.현재단계.includes('위촉진행')).length;
 
             let html = `
+                <!-- 상단 프로세스 네비게이션 카드 -->
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div onclick="switchView('stage1')" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-500 cursor-pointer transition-all flex justify-between items-center group">
                         <div class="flex items-center gap-2">
@@ -911,24 +875,25 @@
                     </div>
                 </div>
 
-                <!-- 단계별 후보자 모음 형태 (가로 칸반 폐지 후 2열 반응형 그리드로 전격 개편) -->
+                <!-- 단계별 후보자 모음 (2열 와이드 반응형 카드) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             `;
 
-            // 가망후보자부터 입사완료까지 5단계를 넓은 카드 형태로 세로 혹은 2열 그리드로 정렬
             const ACTIVE_STAGES = STAGES.slice(0, 5);
 
             ACTIVE_STAGES.forEach((stage, idx) => {
                 const stageList = list.filter(c => c.현재단계 === stage);
                 html += `
-                    <div class="bg-slate-100 rounded-3xl p-5 flex flex-col min-h-[300px] border border-slate-200/60 shadow-xs">
+                    <!-- 외각 대형 카드: p-4 패딩 조율 및 h-auto 가변 대응으로 높이 격차 제거 -->
+                    <div class="bg-slate-100 rounded-3xl p-4 flex flex-col h-auto border border-slate-200/60 shadow-xs">
                         <div class="flex justify-between items-center mb-4 px-1.5">
                             <span class="text-sm font-black text-slate-700 flex items-center gap-2">
                                 <span class="w-3 h-3 rounded-full bg-indigo-600"></span> ${stage.substring(3)}
                             </span>
                             <span class="bg-white px-3 py-1 rounded-full text-xs font-black text-slate-600 shadow-xs">${stageList.length}</span>
                         </div>
-                        <div class="space-y-3 flex-1 overflow-y-auto max-h-[450px] pr-1.5 pb-2">
+                        <!-- 내부 스크롤 및 패딩 p-1.5 주입으로 테두리/그림자 짤림 전면 방지 -->
+                        <div class="space-y-3 flex-1 overflow-y-auto max-h-[450px] p-1.5 pr-2">
                 `;
 
                 if (stageList.length === 0) {
@@ -949,33 +914,33 @@
             parent.innerHTML = html;
         }
 
-        // --- 공용 후보자 카드 템플릿 빌더 (투박한 회색 중첩 테두리 완전 박살 낸 고퀄 디자인) ---
         function buildCandidateCardHtml(cand, stepNum) {
             const tagColor = cand.신입경력여부 === '경력' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-blue-50 text-blue-700 border-blue-100';
             const historyText = cand.신입경력여부 === '경력' ? `경력직 / 보험 ${cand.보험경력 || '경력미정'}` : `신입 / ${cand.보험경력 || '신입'}`;
             const formattedDate = formatDateTime(cand.created_at);
 
             return `
-                <div onclick="openEditCandidateModal('${cand.id}')" class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-indigo-500 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer space-y-3">
+                <!-- 후보자 카드: 가로폭 넓고 그림자 짤림을 차단한 쾌적한 카드 구조 -->
+                <div onclick="openEditCandidateModal('${cand.id}')" class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-indigo-500 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer space-y-3 shadow-sm">
                     <!-- 헤더라인 -->
                     <div class="flex justify-between items-center">
                         <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${cand.name}</h4>
                         <span class="text-[10px] font-black border px-2.5 py-0.5 rounded-md ${tagColor}">${cand.신입경력여부}</span>
                     </div>
                     
-                    <!-- 유입경로 (박스 제거 후 슬림 라벨화) -->
+                    <!-- 유입경로 (도트 레이아웃) -->
                     <div class="text-xs font-bold text-indigo-600 flex items-center gap-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                         <span>유입경로: ${cand.유입경로} ${cand.소개자 ? `(${cand.소개자})` : ''}</span>
                     </div>
 
-                    <!-- 디테일 인포 (도트 포인트 매칭으로 박스 중첩 완화) -->
+                    <!-- 디테일 인포 -->
                     <div class="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
                         <span>${historyText} ${cand.지역 ? `· ${cand.지역}` : ''}</span>
                     </div>
 
-                    <!-- 얇은 선 구분선 및 깔끔한 무색 배경 풋터 -->
+                    <!-- 구분선 및 깔끔한 풋터 -->
                     <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
                         <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
                         <span class="flex items-center gap-0.5"><i data-lucide="clock" class="w-3 h-3"></i> ${formattedDate}</span>
@@ -988,7 +953,7 @@
         // [시안 2] 신규 후보자 등록 화면 세팅
         // ==========================================
         function renderRegisterView(parent, isExamOnly = false) {
-            const todayStr = getLocalTimeString(); // yyyy-mm-dd hh:mm:ss 포맷 자동 지원
+            const todayStr = getLocalTimeString(); 
             
             parent.innerHTML = `
                 <div class="bg-white rounded-3xl border border-slate-200 shadow-sm max-w-2xl mx-auto overflow-hidden">
@@ -1001,7 +966,7 @@
                     </div>
 
                     <form id="recruit-register-form" class="p-6 space-y-6" onsubmit="executeCandidateSubmit(event)">
-                        <!-- 입력 폼 필드 구성 (기본정보) - 순서 변경 및 주민등록번호 넓게 처리 완료 -->
+                        <!-- 입력 폼 필드 구성 (기본정보) -->
                         <div class="space-y-4">
                             <span class="text-xs font-bold text-slate-400 tracking-wider block border-b border-slate-50 pb-1">기본 정보</span>
                             <div class="grid grid-cols-2 gap-4">
@@ -1011,7 +976,6 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">연락처 <span class="text-rose-500">*</span></label>
-                                    <!-- 모바일 숫자 자판 자동 대응을 위한 type="tel" 및 inputmode="numeric" 추가 -->
                                     <input type="tel" inputmode="numeric" id="reg-phone" oninput="handlePhoneInput(this)" maxlength="13" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="010-0000-0000">
                                 </div>
                             </div>
@@ -1032,7 +996,6 @@
                             <div class="grid grid-cols-1 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">주민등록번호</label>
-                                    <!-- 모바일 숫자 자판 자동 대응 및 전체 너비 확장 레이아웃 구현 -->
                                     <input type="tel" inputmode="numeric" id="reg-rrn" oninput="handleRrnInput(this)" maxlength="14" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="000000-0000000">
                                 </div>
                             </div>
@@ -1136,7 +1099,6 @@
                             </div>
                         </div>
 
-                        <!-- 맨 아래 안내문 삭제 및 정렬 구조 완성 -->
                         <div class="pt-4 border-t border-slate-100 flex justify-end items-center text-xs text-slate-400">
                             <div class="flex gap-3">
                                 <button type="button" onclick="switchView('kanban')" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">취소</button>
@@ -1148,7 +1110,6 @@
             `;
         }
 
-        // --- 실시간 타이핑 스마트 포맷터 ---
         function handlePhoneInput(input) {
             let val = input.value.replace(/[^0-9]/g, '');
             if (val.length <= 3) {
@@ -1160,7 +1121,6 @@
             }
         }
 
-        // --- 주민번호 하이픈 분기 ---
         function handleRrnInput(input) {
             let val = input.value.replace(/[^0-9]/g, '');
             if (val.length <= 6) {
@@ -1170,7 +1130,6 @@
             }
         }
 
-        // --- 등록 UI 인라인 버튼 이벤트 핸들러 ---
         function selectFunnelBtn(val) {
             document.getElementById('reg-funnel').value = val;
             const btns = document.querySelectorAll('.funnel-btn');
@@ -1190,7 +1149,6 @@
             }
         }
 
-        // --- 후보자 등록 폼의 타입 변경 액션 ---
         function selectTypeBtn(val) {
             document.getElementById('reg-type').value = val;
             const btns = document.querySelectorAll('.type-btn');
@@ -1202,13 +1160,11 @@
                 }
             });
 
-            // 신입 선택 시 경력 '신입'으로 자동 세팅 가드 적용
             if (val === '신입') {
                 document.getElementById('reg-career').value = '신입';
             }
         }
 
-        // --- 신규 후보자 저장 액션 (중복 클릭 완벽 차단) ---
         async function executeCandidateSubmit(e) {
             e.preventDefault();
 
@@ -1232,7 +1188,7 @@
             const memo = document.getElementById('reg-memo').value.trim();
 
             const candId = "cand_" + Date.now();
-            const formattedTimeStr = getLocalTimeString(); // 로컬 기준 24시간 포맷 자동 주입
+            const formattedTimeStr = getLocalTimeString(); 
 
             const candData = {
                 id: candId,
@@ -1288,15 +1244,13 @@
             showToast("네트워크 불안정으로 캐시에 로컬 보존되었습니다.", "info");
         }
 
-        // ==========================================
-        // [시안 3] 가망후보자 통합 관리 화면
-        // ==========================================
         function renderStage1ListView(parent) {
             const list = getPermittedCandidates().filter(c => c.현재단계.includes('가망후보자'));
             
-            // 필터링 적용 처리 (요구사항: '면담 예정' 항목 삭제됨)
             let filtered = [...list];
-            if (stage1SubFilter === "NOCALL") {
+            if (stage1SubFilter === "APT") {
+                filtered = list.filter(c => appointmentsList.some(a => a.candidate_id === c.id));
+            } else if (stage1SubFilter === "NOCALL") {
                 filtered = list.filter(c => !appointmentsList.some(a => a.candidate_id === c.id));
             } else if (stage1SubFilter === "EXAM") {
                 filtered = list.filter(c => (c.memo && c.memo.includes('시험')) || c.유입경로 === '시험신청' || c.시험응시지역);
@@ -1307,13 +1261,13 @@
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-wrap gap-2 items-center justify-between shadow-sm">
                         <div class="flex flex-wrap gap-2" id="stage1-tab-group">
                             <button onclick="setStage1Filter('ALL')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'ALL' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">전체 ${list.length}</button>
+                            <button onclick="setStage1Filter('APT')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'APT' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">면담 예정</button>
                             <button onclick="setStage1Filter('NOCALL')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'NOCALL' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">미연락</button>
                             <button onclick="setStage1Filter('EXAM')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'EXAM' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">시험대기</button>
                         </div>
                         <div class="text-xs text-slate-400 font-bold">조회건수: ${filtered.length}건</div>
                     </div>
 
-                    <!-- 가망후보자 화면 카드 2열 반응형 그리드 갱신 적용 -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             `;
 
@@ -1331,7 +1285,6 @@
                     const hasApt = appointment ? `${formatDateTime(appointment.datetime)} 면담` : '면담 예약 없음';
                     const formattedDate = formatDateTime(c.created_at);
 
-                    // 시험 신청 여부 및 이력 가시화 배지 데이터 빌드
                     let examBadgeText = '';
                     if (c.시험응시지역) {
                         const types = [];
@@ -1378,21 +1331,16 @@
             parent.innerHTML = html;
         }
 
-        // --- 가망후보자 필터 갱신 바인딩 ---
         function setStage1Filter(filterType) {
             stage1SubFilter = filterType;
             renderCurrentView();
         }
 
-        // ==========================================
-        // [수정] 시험 신청 팝업 모달 제어 시스템
-        // ==========================================
         function openExamRegisterModal(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (!cand) return;
 
             document.getElementById('exam-cand-id').value = candId;
-            // 후보자가 이미 입력한 정보가 있다면 디폴트 값으로 연동시켜 주는 스마트 편의성 제공
             document.getElementById('exam-rrn').value = cand.주민등록번호 || '';
             document.getElementById('exam-address').value = cand.주소 || '';
             document.getElementById('exam-region').value = cand.시험응시지역 || '';
@@ -1401,7 +1349,6 @@
             document.getElementById('exam-chk-saengbo').checked = cand.생보시험 || false;
             document.getElementById('exam-chk-third').checked = cand.제3보험시험 || false;
 
-            // 저장 버튼 상태 초기화 가드 작동
             const submitBtn = document.getElementById('exam-submit-btn');
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -1433,22 +1380,18 @@
             const saengbo = document.getElementById('exam-chk-saengbo').checked;
             const third = document.getElementById('exam-chk-third').checked;
 
-            // 주민번호 필수 입력 검사
             if (!rrn || rrn.length < 14) {
                 showToast("주민등록번호 규격(14자리)을 정확히 입력해주십시오.", "error");
                 return;
             }
-            // 자택주소 필수 입력 검사
             if (!address) {
                 showToast("자택주소를 필수 입력해주십시오.", "error");
                 return;
             }
-            // 응시지역 필수 선택 검사
             if (!region) {
                 showToast("시험 응시지역을 콤보박스에서 선택해주십시오.", "error");
                 return;
             }
-            // 시험 종류 최소 1개 체크박스 선택 유효성 검사
             if (!sonbo && !saengbo && !third) {
                 showToast("응시하려는 시험을 최소 하나 이상 선택하십시오.", "error");
                 return;
@@ -1462,7 +1405,7 @@
                 cand.손보시험 = sonbo;
                 cand.생보시험 = saengbo;
                 cand.제3보험시험 = third;
-                cand.stage_updated = getLocalTimeString(); // local format auto timezone bypass
+                cand.stage_updated = getLocalTimeString(); 
 
                 const submitBtn = document.getElementById('exam-submit-btn');
                 submitBtn.disabled = true;
@@ -1491,15 +1434,11 @@
             }
         }
 
-        // ==========================================
-        // [시안 4] 약속확정 달력 & 스케줄 피드백 관리 (요구사항: 달력, 주 현황 삭제 및 2열 정렬)
-        // ==========================================
         function renderStage2CalendarView(parent) {
             const list = getPermittedCandidates().filter(c => c.현재단계.includes('약속확정'));
             
             let html = `
                 <div class="space-y-4">
-                    <!-- 약속확정 화면 2열 반응형 그리드 갱신 적용 -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             `;
 
@@ -1550,9 +1489,6 @@
             parent.innerHTML = html;
         }
 
-        // ==========================================
-        // [시안 5] 상담완료 피드백 관리 뷰 (요구사항: 상담 완료 현황 및 최신순 글자 삭제 및 2열 정렬)
-        // ==========================================
         function renderStage3FeedbackView(parent) {
             const list = getPermittedCandidates().filter(c => c.현재단계.includes('상담완료'));
 
@@ -1573,7 +1509,6 @@
                         </div>
                     </div>
 
-                    <!-- 상담완료 화면 2열 반응형 그리드 갱신 적용 -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             `;
 
@@ -1627,15 +1562,12 @@
             renderCurrentView();
         }
 
-        // ==========================================
-        // [시안 6] 위촉진행 서류 관리 화면 (모바일 공간 최적화 및 합격증 분리 완료)
-        // ==========================================
         function renderStage4DocumentView(parent) {
             const list = getPermittedCandidates().filter(c => c.현재단계.includes('위촉진행'));
             
             let html = `
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- 후보자 목록 영역 (모바일 공백 완전 붕괴 최적화!) -->
+                    <!-- 후보자 목록 영역 - 모바일 가로 가변 높이 및 여백 최적화 완수 -->
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm lg:h-[70vh] h-auto max-h-[250px] lg:max-h-none overflow-y-auto space-y-2">
                         <span class="text-xs font-bold text-slate-400 block px-2 mb-2">위촉 후보자 목록 (${list.length}명)</span>
             `;
@@ -1646,7 +1578,6 @@
                 `;
             } else {
                 list.forEach(c => {
-                    // 버퍼에 데이터가 있다면 우선 차용, 없다면 원본 사용
                     const doc = docDraftBuffer[c.id] || documentsList.find(d => d.candidate_id === c.id) || {};
                     const docKeys = ['이클린서비스', '신분증', '통장사본', '가족관계증명서', '손보합격증', '생보합격증', '경력증명서', '수료증'];
                     const doneCount = docKeys.filter(k => doc[k] === true).length;
@@ -1687,17 +1618,15 @@
             }
         }
 
-        // --- 상세 서류 체크리스트 패널 조립 (손보/생보합격증 분리 및 임시 버퍼링 작동) ---
         function renderDocDetailSlot(candId) {
             const c = candidatesList.find(cand => cand.id === candId);
             if (!c) return;
 
-            // 로컬 임시 수정 버퍼에 존재 여부 체크
             if (!docDraftBuffer[candId]) {
                 const docSource = documentsList.find(d => d.candidate_id === candId) || {
                     candidate_id: candId, 단톡방초대: false, 이클린서비스: false, 신분증: false, 통장사본: false, 가족관계증명서: false, 손보합격증: false, 생보합격증: false, 경력증명서: false, 수료증: false, 생보URL전달: false, 동양라이나서류: false, memo: ""
                 };
-                docDraftBuffer[candId] = JSON.parse(JSON.stringify(docSource)); // 딥 카피 백업
+                docDraftBuffer[candId] = JSON.parse(JSON.stringify(docSource)); 
             }
 
             const doc = docDraftBuffer[candId];
@@ -1731,7 +1660,7 @@
                         </div>
                     </div>
 
-                    <!-- 2열 그리드 구조 체크박스 버튼 세트 (손보/생보합격증 분리 완료) -->
+                    <!-- 2열 그리드 구조 체크박스 버튼 세트 -->
                     <div class="space-y-2">
                         <span class="text-xs font-bold text-slate-400">제출 서류 체크리스트 (${doneCount} / 8 완료)</span>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1776,7 +1705,6 @@
             lucide.createIcons();
         }
 
-        // --- 임시 드래프트 가상 체크박스 뷰 렌더러 ---
         function buildDraftCheckboxBtn(candId, key, label, desc, isChecked) {
             const activeClass = isChecked ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-700';
             const checkIcon = isChecked ? '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>' : '<div class="w-4 h-4 rounded-full border border-slate-300"></div>';
@@ -1792,7 +1720,6 @@
             `;
         }
 
-        // --- 임시 가체크 상태 버퍼 보존 (통신 지연) ---
         function toggleDraftCheckboxState(candId, key, currentVal) {
             if (docDraftBuffer[candId]) {
                 docDraftBuffer[candId][key] = !currentVal;
@@ -1813,7 +1740,6 @@
             }
         }
 
-        // --- 실시간 일괄 전송 저장 처리 실행 ---
         async function executeSaveDraftDocBatch(candId) {
             const draft = docDraftBuffer[candId];
             if (!draft) return;
@@ -1822,7 +1748,7 @@
             saveBtn.disabled = true;
             saveBtn.innerHTML = '<span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent mr-2"></span> 저장 중...';
 
-            draft.updated_at = getLocalTimeString(); // 로컬 기준 24시간 표기
+            draft.updated_at = new Date().toISOString();
             showLoader("구글 스프레드시트에 서류 정보를 전격 기록 중...");
 
             try {
@@ -1839,14 +1765,10 @@
             renderDocDetailSlot(candId);
         }
 
-        // ==========================================
-        // [수정] 후보자 상세 정보 수정 모달 오픈 (칸반 카드 연동)
-        // ==========================================
         function openEditCandidateModal(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (!cand) return;
 
-            // 시간 드롭다운 옵션 조립 (08:00 ~ 22:00)
             let timeOptions = '<option value="선택">시간 선택</option>';
             for (let i = 8; i <= 22; i++) {
                 const hourStr = String(i).padStart(2, '0') + ':00';
@@ -1855,7 +1777,6 @@
 
             const formattedDate = formatDateTime(cand.created_at);
 
-            // 시험 신청을 한 후보자인 경우 하단 시험 정보 패널 동적 추가용 HTML 빌드
             let examDetailsHtml = '';
             if (cand.시험응시지역) {
                 const checkedSonbo = cand.손보시험 ? 'checked' : '';
@@ -1919,7 +1840,6 @@
                         </div>
                         
                         <form id="edit-modal-form" class="p-6 space-y-6 flex-1 overflow-y-auto" onsubmit="executeCandidateEditSubmit(event, '${candId}')">
-                            <!-- [등록 화면 구성과 100% 동기화] 기본 정보 및 인포 파싱 -->
                             <div class="space-y-4">
                                 <span class="text-xs font-bold text-slate-400 tracking-wider block border-b border-slate-50 pb-1">기본 정보 수정</span>
                                 <div class="grid grid-cols-2 gap-4">
@@ -1942,7 +1862,7 @@
                                         <select id="edit-gender" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                                             <option value="남성" ${cand.성별 === '남성' ? 'selected' : ''}>남성</option>
                                             <option value="여성" ${cand.성별 === '여성' ? 'selected' : ''}>여성</option>
-                                            <option value="선택" ${(!cand.성별 || cand.성별 === '선택') ? 'selected' : ''}>selected</option>
+                                            <option value="선택" ${(!cand.성별 || cand.성별 === '선택') ? 'selected' : ''}>선택안함</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1954,7 +1874,6 @@
                                 </div>
                             </div>
 
-                            <!-- 유입 경로 -->
                             <div class="space-y-4">
                                 <span class="text-xs font-bold text-slate-400 tracking-wider block border-b border-slate-50 pb-1">유입 경로 정보</span>
                                 <div class="grid grid-cols-2 gap-4">
@@ -1996,7 +1915,6 @@
                                 </div>
                             </div>
 
-                            <!-- 후보자 세부 프로필 -->
                             <div class="space-y-4">
                                 <span class="text-xs font-bold text-slate-400 tracking-wider block border-b border-slate-50 pb-1">후보자 세부 프로필</span>
                                 <div class="grid grid-cols-2 gap-4">
@@ -2034,7 +1952,6 @@
                                 </div>
                             </div>
 
-                            <!-- 담당 위촉 매니저 정보 -->
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">위촉 담당자 <span class="text-rose-500">*</span></label>
@@ -2051,7 +1968,6 @@
                                 <textarea id="edit-memo" rows="3" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">${cand.memo || ''}</textarea>
                             </div>
 
-                            <!-- 시험 신청 이력이 있는 경우, 하단 전용 시험 정보 카드 노출 (요구사항 반영) -->
                             ${examDetailsHtml}
 
                             <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 shrink-0">
@@ -2091,9 +2007,8 @@
             cand.이전소속사 = document.getElementById('edit-prev-company').value.trim();
             cand.위촉담당자 = document.getElementById('edit-recruiter').value.trim();
             cand.memo = document.getElementById('edit-memo').value.trim();
-            cand.stage_updated = getLocalTimeString(); // KST 2자리 타임스탬프 세팅
+            cand.stage_updated = getLocalTimeString(); 
 
-            // 상세정보에서 시험 정보도 함게 수정한 경우 처리 바인딩
             const examAddressInput = document.getElementById('edit-exam-address');
             if (examAddressInput) {
                 cand.주소 = examAddressInput.value.trim();
@@ -2121,7 +2036,6 @@
             await syncDatabase();
         }
 
-        // --- 일정 수동 지정 모달 ---
         function openManualAptModal(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (!cand) return;
@@ -2166,11 +2080,10 @@
             showLoader("면담 일정을 생성하고 약속확정 단계로 승급 처리 중...");
             await executeSaveAppointment(aptData);
 
-            // 약속확정 단계로 올리기
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
                 cand.현재단계 = "2. 약속확정";
-                cand.stage_updated = getLocalTimeString(); // 로컬 기준 24시간 보정
+                cand.stage_updated = getLocalTimeString(); 
                 await executeUpdateCandidate(cand);
             }
 
@@ -2206,12 +2119,11 @@
             }
         }
 
-        // --- 약속 확정하기 버튼 클릭 동작 연결 ---
         async function promoteToStage2(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
                 cand.현재단계 = "2. 약속확정";
-                cand.stage_updated = getLocalTimeString(); // KST 2자리 타임스탬프 세팅
+                cand.stage_updated = getLocalTimeString(); 
                 showLoader("약속 확정 리스트로 이동 중...");
                 await executeUpdateCandidate(cand);
                 await syncDatabase();
@@ -2219,7 +2131,6 @@
             }
         }
 
-        // --- 약속확정 단계에서 면담완료(상담결과 기록) 모달 연결 ---
         function promoteToStage3Modal(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (!cand) return;
@@ -2266,7 +2177,7 @@
                 cand.현재단계 = "3. 상담완료";
                 cand.상담결과 = result;
                 cand.memo = memo;
-                cand.stage_updated = getLocalTimeString(); // KST 2자리 규격 동기화
+                cand.stage_updated = getLocalTimeString(); 
                 await executeUpdateCandidate(cand);
             }
 
@@ -2279,7 +2190,7 @@
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
                 cand.현재단계 = "4. 위촉진행";
-                cand.stage_updated = getLocalTimeString(); // KST 2자리 규격 동기화
+                cand.stage_updated = getLocalTimeString(); 
                 showLoader("위촉진행 데이터로 이식 중...");
                 await executeUpdateCandidate(cand);
                 await syncDatabase();
@@ -2291,7 +2202,7 @@
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
                 cand.현재단계 = "6. 거절후보자";
-                cand.stage_updated = getLocalTimeString(); // KST 2자리 규격 동기화
+                cand.stage_updated = getLocalTimeString(); 
                 showLoader("거절 보관함으로 이동 중...");
                 await executeUpdateCandidate(cand);
                 await syncDatabase();
@@ -2299,9 +2210,6 @@
             }
         }
 
-        // ==========================================
-        // [시안 7] 일반 단계별 리스트 뷰 및 관리 공용 엔진
-        // ==========================================
         function renderGenericStageView(parent, stageId) {
             const stepNum = stageId.replace('stage', '');
             const stageName = STAGES[stepNum - 1];
@@ -2344,9 +2252,6 @@
             parent.innerHTML = html;
         }
 
-        // ==========================================
-        // [공용 시스템 유틸리티 소스]
-        // ==========================================
         function confirmLogout() {
             document.getElementById('logout-confirm-modal').classList.remove('hidden');
         }
@@ -2363,7 +2268,6 @@
             showToast("보안 세션이 안전하게 종료되었습니다.", "success");
         }
 
-        // 글로벌 로딩 인디케이터 제어 함수 원상 복원 완료
         function showLoader(text = '처리 중...') {
             document.getElementById('loader-text').innerText = text;
             document.getElementById('global-loader').classList.remove('hidden');
@@ -2384,7 +2288,6 @@
             return days[date.getDay()];
         }
 
-        // --- 위촉 진행 안내 문자 숏컷 시뮬레이터 ---
         function sendLmsNotice(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (!cand) return;
@@ -2404,8 +2307,9 @@
         function finalizeAdmission(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
+                cand.currently_active_phase = "5. 입사완료";
                 cand.현재단계 = "5. 입사완료";
-                cand.stage_updated = getLocalTimeString(); // 로컬 기준 24시간 표기
+                cand.stage_updated = getLocalTimeString(); 
                 showLoader("위촉 최종 승인 및 5단계 이동 중...");
                 executeUpdateCandidate(cand).then(() => {
                     syncDatabase();
@@ -2491,12 +2395,6 @@
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
-        }
-
-        function formatDateShort(isoString) {
-            if (!isoString) return '';
-            const d = new Date(isoString);
-            return `${d.getMonth() + 1}/${d.getDate()}`;
         }
     </script>
 </body>
