@@ -436,6 +436,7 @@
     <!-- 6. 앱 구동 스크립트 & 연동 브릿지 로직 -->
     <!-- ========================================== -->
     <script>
+        // --- 글로벌 상태 전역 변수 ---
         let currentUser = null;
         let candidatesList = [];
         let appointmentsList = [];
@@ -520,65 +521,6 @@
             }
         }
 
-        // 간단한 YYYY.MM.DD 점(dot) 분리형 날짜 변환기
-        function formatDateDot(dateStr) {
-            if (!dateStr) return '';
-            try {
-                const cleaned = String(dateStr).split(' ')[0].replace(/-/g, '.');
-                if (/^\d{4}\.\d{2}\.\d{2}$/.test(cleaned)) {
-                    return cleaned;
-                }
-                const d = new Date(dateStr);
-                if (isNaN(d.getTime())) return String(dateStr);
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                const dd = String(d.getDate()).padStart(2, '0');
-                return `${yyyy}.${mm}.${dd}`;
-            } catch (e) {
-                return String(dateStr);
-            }
-        }
-
-        // 입사년월 전용 포맷터
-        function formatYearMonth(dateStr) {
-            if (!dateStr) return '';
-            try {
-                const d = new Date(dateStr);
-                if (isNaN(d.getTime())) {
-                    const matches = String(dateStr).match(/^(\d{4})[-.](\d{2})/);
-                    if (matches) return `${matches[1]}.${matches[2]}월`;
-                    return String(dateStr);
-                }
-                const yyyy = d.getFullYear();
-                const mm = String(d.getMonth() + 1).padStart(2, '0');
-                return `${yyyy}.${mm}월`;
-            } catch (e) {
-                return String(dateStr);
-            }
-        }
-
-        // 약속 스케줄 D-day 계산기
-        function calculateDDay(targetDateStr) {
-            if (!targetDateStr) return '';
-            try {
-                const now = new Date();
-                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                
-                const target = new Date(targetDateStr);
-                const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-                
-                const diffTime = targetDay.getTime() - today.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                if (diffDays === 0) return '오늘';
-                if (diffDays === 1) return '내일';
-                if (diffDays > 1) return 'D-' + diffDays;
-                return 'D+' + Math.abs(diffDays);
-            } catch (e) {
-                return '';
-            }
-        }
-
         // --- 생명 주기 진입부 ---
         window.onload = function() {
             lucide.createIcons();
@@ -614,17 +556,17 @@
         function initLocalMockDatabase() {
             if (!localStorage.getItem('DB_CANDIDATES_V3')) {
                 const sampleCands = [
-                    { id: "cand_1", name: "홍길순", phone: "010-1234-5678", 주민등록번호:"920512-1******", 성별:"남성", 지역:"서울", 유입경로: "블로그", 소개자: "", 신입경력여부: "경력", 현재단계: "1. 가망후보자", stage_updated: getLocalTimeString(), memo: "이직 관심 매우 높음", created_at: "2026-06-03 10:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "3년", 주소: "", 시험응시지역: "", 손보시험: false,생보시험: false, 제3보험시험: false },
-                    { id: "cand_2", name: "최윤서", phone: "010-9876-5432", 주민등록번호:"951120-2******", 성별:"여성", 지역:"강남", 유입경로: "유튜브", 소개자: "", 신입경력여부: "경력", 현재단계: "2. 약속확정", stage_updated: getLocalTimeString(), memo: "수요일 면담 확정", created_at: "2026-06-03 11:30:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "1년 이내", 주소: "", 시험응시지역: "", 손보시험: false,생보시험: false, 제3보험시험: false },
-                    { id: "cand_3", name: "강서연", phone: "010-4444-5555", 주민등록번호:"900418-2******", 성별:"여성", 지역:"분당", 유입경로: "소개", 소개자: "홍길동 FC", 신입경력여부: "경력", 현재단계: "4. 위촉진행", stage_updated: getLocalTimeString(), memo: "위촉의향 강함", created_at: "2026-05-29 14:15:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "5년 이상", 주소: "", 시험응시지역: "", 손보시험: false,생보시험: false, 제3보험시험: false },
-                    { id: "cand_4", name: "박준길", phone: "010-3333-2222", 주민등록번호:"980808-1******", 성별:"남성", 지역:"수지", 유입경로: "소개", 소개자: "박표현", 신입경력여부: "신입", 현재단계: "2. 약속확정", stage_updated: getLocalTimeString(), memo: "면담 예약 완료", created_at: "2026-06-03 17:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "신입", 주소: "", 시험응시지역: "", 손보시험: false,생보시험: false, 제3보험시험: false }
+                    { id: "cand_1", name: "홍길순", phone: "010-1234-5678", 주민등록번호:"920512-1******", 성별:"남성", 지역:"서울 강남구", 유입경로: "블로그", 소개자: "", 신입경력여부: "경력", 현재단계: "1. 가망후보자", stage_updated: getLocalTimeString(), memo: "이직 관심 매우 높음", created_at: "2026-06-03 10:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "3년", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
+                    { id: "cand_2", name: "최윤서", phone: "010-9876-5432", 주민등록번호:"951120-2******", 성별:"여성", 유입경로: "유튜브", 소개자: "", 신입경력여부: "경력", 현재단계: "2. 약속확정", stage_updated: getLocalTimeString(), memo: "수요일 면담 확정", created_at: "2026-06-03 11:30:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "1년 이내", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
+                    { id: "cand_3", name: "강서연", phone: "010-4444-5555", 주민등록번호:"900418-2******", 성별:"여성", 유입경로: "소개", 소개자: "홍길동 FC", 신입경력여부: "경력", 현재단계: "4. 위촉진행", stage_updated: getLocalTimeString(), memo: "위촉의향 강함", created_at: "2026-05-29 14:15:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "5년 이상", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
+                    { id: "cand_4", name: "박준길", phone: "010-3333-2222", 주민등록번호:"980808-1******", 성별:"남성", 지역:"서울 송파구", 유입경로: "소개", 소개자: "박표현", 신입경력여부: "신입", 현재단계: "2. 약속확정", stage_updated: getLocalTimeString(), memo: "면담 예약 완료", created_at: "2026-06-03 17:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "신입", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false }
                 ];
                 localStorage.setItem('DB_CANDIDATES_V3', JSON.stringify(sampleCands));
             }
             if (!localStorage.getItem('DB_APPOINTMENTS_V3')) {
                 const sampleApts = [
-                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-04 14:00:00", result: "수요일 면담 예약 완료", next_action: "리마인드 문자 전송", 장소: "지사 사무실" },
-                    { candidate_id: "cand_4", 약속상담여부: "대기", datetime: "2026-06-05 17:00:00", result: "초기 상담 예약 성립", next_action: "본부 위치 발송", 장소: "지사 사무실" }
+                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-03 14:00:00", result: "수요일 면담 예약 완료", next_action: "리마인드 문자 전송", 장소: "지사 사무실" },
+                    { candidate_id: "cand_4", 약속상담여부: "대기", datetime: "2026-06-03 17:00:00", result: "초기 상담 예약 성립", next_action: "본부 위치 발송", 장소: "지사 사무실" }
                 ];
                 localStorage.setItem('DB_APPOINTMENTS_V3', JSON.stringify(sampleApts));
             }
@@ -751,7 +693,6 @@
             document.getElementById('user-display-lbl').innerText = currentUser.이름;
             document.getElementById('user-role-lbl').innerText = currentUser.권한1;
 
-            // 모바일 뷰 전환 및 로그인 통과 시 스크롤 완전 최상단 리셋 구현 완료
             window.scrollTo({ top: 0, behavior: 'instant' });
             document.documentElement.scrollTop = 0;
             document.body.scrollTop = 0;
@@ -881,8 +822,8 @@
                 "stage1": "가망후보자",
                 "stage2": "약속확정 후보자",
                 "stage3": "상담완료 후보자",
-                "stage4": "위촉진행 후보자",
-                "stage5": "입사완료자",
+                "stage4": "위촉진행 서류 관리",
+                "stage5": "최종 입사 완료 프로세스",
                 "stage6": "거절후보자 데이터베이스",
                 "stage7": "퇴사자 관리 이력",
                 "reports": "리쿠르팅 성과 분석 리포트"
@@ -980,7 +921,7 @@
                     html += `<div class="text-center py-12 text-xs text-slate-400 bg-white/40 border border-dashed border-slate-200 rounded-2xl">해당 단계에 대기 중인 대상자가 없습니다.</div>`;
                 } else {
                     stageList.forEach(cand => {
-                        html += buildKanbanCardHtml(cand, idx + 1);
+                        html += buildCandidateCardHtml(cand, idx + 1);
                     });
                 }
 
@@ -994,102 +935,37 @@
             parent.innerHTML = html;
         }
 
-        // --- 대시보드 5개 프로세스별 특징적 구성요소 디자인 렌더러 ---
-        function buildKanbanCardHtml(cand, stepNum) {
+        function buildCandidateCardHtml(cand, stepNum) {
             const tagColor = cand.신입경력여부 === '경력' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-blue-50 text-blue-700 border-blue-100';
-            const locationText = cand.지역 ? ` (${cand.지역})` : '';
-            const careerText = cand.신입경력여부 === '경력' ? `경력 ${cand.보험경력 || '2년차'}` : '신입';
-            
-            let cardBody = '';
-
-            if (stepNum === 1) {
-                // 1) 가망후보자 : 이름 (지역) | 신입경력 및 보험경력 배지 | 유입 경로 / 현직업 | 등록일(년월일)
-                const formattedRegDate = formatDateDot(cand.created_at);
-                cardBody = `
-                    <div class="text-xs font-semibold text-slate-600 mt-1">
-                        ${cand.유입경로} / ${cand.현직업 || '미지정'}
-                    </div>
-                    <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-400 font-bold">
-                        <span>담당 ${cand.위촉담당자 || cand.recruiter || '미배정'}</span>
-                        <span>${formattedRegDate}</span>
-                    </div>
-                `;
-            } else if (stepNum === 2) {
-                // 2) 약속확정 : 이름 (지역) | 신입경력 및 보험경력 배지 | 상담일정 / 상담장소 | D데이 안내 배지
-                const apt = appointmentsList.find(a => a.candidate_id === cand.id) || {};
-                const aptDateTime = apt.datetime ? formatDateDot(apt.datetime) + ' ' + String(apt.datetime).split(' ')[1].substring(0, 5) : '일정 미정';
-                const dDayText = calculateDDay(apt.datetime) || '미정';
-                
-                cardBody = `
-                    <div class="text-xs font-semibold text-indigo-600 mt-1">
-                        ${aptDateTime} / ${apt.장소 || '지사 사무실'}
-                    </div>
-                    <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] font-bold">
-                        <span class="text-slate-400">담당 ${cand.위촉담당자 || cand.recruiter || '미배정'}</span>
-                        <span class="bg-rose-50 text-rose-600 px-2.5 py-0.5 rounded-md border border-rose-200 text-[10px] shadow-sm">${dDayText}</span>
-                    </div>
-                `;
-            } else if (stepNum === 3) {
-                // 3) 상담완료 : 이름 (지역) | 신입경력 및 보험경력 배지 | 상담일(년월일) 상담 | 상담 결과 배지
-                const consultDate = formatDateDot(cand.stage_updated);
-                const resultText = cand.상담결과 || '검토중';
-                const resultBadgeColor = resultText === '긍정적' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200';
-                
-                cardBody = `
-                    <div class="text-xs font-semibold text-slate-600 mt-1">
-                        ${consultDate} 상담
-                    </div>
-                    <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] font-bold">
-                        <span class="text-slate-400">담당 ${cand.위촉담당자 || cand.recruiter || '미배정'}</span>
-                        <span class="px-2.5 py-0.5 rounded-md border text-[10px] shadow-sm ${resultBadgeColor}">${resultText}</span>
-                    </div>
-                `;
-            } else if (stepNum === 4) {
-                // 4) 위촉진행 : 이름 (지역) | 신입경력 및 보험경력 배지 | 진행률 그래프와 완료갯수/총갯수
-                const doc = documentsList.find(d => d.candidate_id === cand.id) || {};
-                const docKeys = ['이클린서비스', '신분증', '통장사본', '가족관계증명서', '손보합격증', '생보합격증', '경력증명서', '수료증'];
-                const doneCount = docKeys.filter(k => isChecked(doc[k])).length;
-                
-                // 도트 배열 그리기
-                let dotsHtml = '<div class="flex gap-1.5 items-center">';
-                for (let dIdx = 0; dIdx < 8; dIdx++) {
-                    const isFilled = isChecked(doc[docKeys[dIdx]]);
-                    const dotColor = isFilled ? 'bg-[#1e293b]' : 'bg-slate-200';
-                    dotsHtml += `<span class="w-2 h-2 rounded-full ${dotColor} inline-block"></span>`;
-                }
-                dotsHtml += '</div>';
-
-                cardBody = `
-                    <div class="flex items-center justify-between mt-1">
-                        ${dotsHtml}
-                        <span class="text-xs font-black text-indigo-600">${doneCount}/8 완료</span>
-                    </div>
-                    <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-400 font-bold">
-                        <span>담당 ${cand.위촉담당자 || cand.recruiter || '미배정'}</span>
-                        <span>서류 진척율 ${Math.round((doneCount / 8) * 100)}%</span>
-                    </div>
-                `;
-            } else if (stepNum === 5) {
-                // 5) 입사완료 : 이름 (지역) | 신입경력 및 보험경력 배지 | 리쿠르팅담당자 | 입사년월(YYYY.MM월 입사)
-                const hiredMonthText = formatYearMonth(cand.예정입사일 || cand.stage_updated);
-                cardBody = `
-                    <div class="text-xs font-semibold text-slate-500 mt-1">
-                        담당 ${cand.위촉담당자 || cand.recruiter || '미배정'}
-                    </div>
-                    <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] font-bold text-indigo-600">
-                        <span class="text-slate-400">최종 승인완료</span>
-                        <span>${hiredMonthText} 입사</span>
-                    </div>
-                `;
-            }
+            const historyText = cand.신입경력여부 === '경력' ? `경력직 / 보험 ${cand.보험경력 || '경력미정'}` : `신입 / ${cand.보험경력 || '신입'}`;
+            const formattedDate = formatDateTime(cand.created_at);
 
             return `
-                <div onclick="openEditCandidateModal('${cand.id}')" class="bg-white p-5 rounded-2xl border border-slate-200/80 hover:border-indigo-500 hover:shadow-lg transition-all duration-200 cursor-pointer space-y-2.5 shadow-sm">
+                <!-- 후보자 카드: 가로폭 넓고 그림자 짤림을 차단한 쾌적한 카드 구조 -->
+                <div onclick="openEditCandidateModal('${cand.id}')" class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-indigo-500 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer space-y-3 shadow-sm">
+                    <!-- 헤더라인 -->
                     <div class="flex justify-between items-center">
-                        <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${cand.name}<span class="text-slate-400 font-bold">${locationText}</span></h4>
-                        <span class="text-xs font-bold border px-2.5 py-0.5 rounded-lg ${tagColor}">${careerText}</span>
+                        <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${cand.name}</h4>
+                        <span class="text-[10px] font-black border px-2.5 py-0.5 rounded-md ${tagColor}">${cand.신입경력여부}</span>
                     </div>
-                    ${cardBody}
+                    
+                    <!-- 유입경로 (도트 레이아웃) -->
+                    <div class="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        <span>유입경로: ${cand.유입경로} ${cand.소개자 ? `(${cand.소개자})` : ''}</span>
+                    </div>
+
+                    <!-- 디테일 인포 -->
+                    <div class="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                        <span>${historyText} ${cand.지역 ? `· ${cand.지역}` : ''}</span>
+                    </div>
+
+                    <!-- 구분선 및 깔끔한 풋터 -->
+                    <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
+                        <span class="flex items-center gap-0.5"><i data-lucide="clock" class="w-3 h-3"></i> ${formattedDate}</span>
+                    </div>
                 </div>
             `;
         }
@@ -1407,9 +1283,11 @@
                     <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-wrap gap-2 items-center justify-between shadow-sm">
                         <div class="flex flex-wrap gap-2" id="stage1-tab-group">
                             <button onclick="setStage1Filter('ALL')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'ALL' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">전체 ${list.length}</button>
+                            <button onclick="setStage1Filter('APT')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'APT' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">면담 예정</button>
                             <button onclick="setStage1Filter('NOCALL')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'NOCALL' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">미연락</button>
                             <button onclick="setStage1Filter('EXAM')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'EXAM' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">시험대기</button>
                         </div>
+                        <div class="text-xs text-slate-400 font-bold">조회건수: ${filtered.length}건</div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1920,62 +1798,6 @@
             renderDocDetailSlot(candId);
         }
 
-        // ==========================================
-        // [수정] 입사완료자 (Stage 5) 2열 정렬 레이아웃 뷰
-        // ==========================================
-        function renderStage5ListView(parent) {
-            const list = getPermittedCandidates().filter(c => c.현재단계 && c.현재단계.includes('입사완료'));
-            
-            let html = `
-                <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            `;
-
-            if (list.length === 0) {
-                html += `
-                    <div class="col-span-full bg-white rounded-3xl p-16 text-center border border-slate-200">
-                        <i data-lucide="shield-check" class="w-12 h-12 text-slate-300 mx-auto stroke-1 mb-3"></i>
-                        <h4 class="text-xs font-bold text-slate-400">입사 완료된 대상자가 존재하지 않습니다.</h4>
-                    </div>
-                `;
-            } else {
-                list.forEach(c => {
-                    const hiredMonth = formatYearMonth(c.예정입사일 || c.stage_updated);
-                    const formattedDate = formatDateDot(c.stage_updated);
-                    const typeText = c.신입경력여부 === '경력' ? `경력직 / 보험 ${c.보험경력 || '2년차'}` : '신입 / 신입';
-
-                    html += `
-                        <div onclick="openEditCandidateModal('${c.id}')" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-indigo-400 transition-all flex flex-col justify-between gap-4 cursor-pointer">
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <h4 class="text-base font-black text-slate-900">${c.name}</h4>
-                                        <p class="text-xs text-slate-400 mt-1">소속 — ${c.지역 || '미정'}</p>
-                                    </div>
-                                    <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full shrink-0">${typeText}</span>
-                                </div>
-                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs text-slate-600 font-bold flex justify-between">
-                                    <span>추천담당 FC: ${c.위촉담당자 || c.recruiter || '미배정'}</span>
-                                    <span class="text-indigo-600">${hiredMonth} 입사</span>
-                                </div>
-                            </div>
-                            <div class="pt-3 border-t border-slate-100 flex justify-between items-center text-[11px] text-slate-400 font-medium">
-                                <span>최종 위촉완료</span>
-                                <span>확정일: ${formattedDate}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-
-            html += `
-                    </div>
-                </div>
-            `;
-            parent.innerHTML = html;
-        }
-
-        // --- 상세 후보자 편집 모달 오픈 및 양식 통합 ---
         function openEditCandidateModal(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (!cand) return;
@@ -2596,7 +2418,7 @@
         function finalizeAdmission(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
-                cand.현재단계 = "5. 입사완료";
+                cand.currentView = "5. 입사완료";
                 cand.stage_updated = getLocalTimeString(); 
                 showLoader("위촉 최종 승인 및 5단계 이동 중...");
                 executeUpdateCandidate(cand).then(() => {
@@ -2632,8 +2454,6 @@
                 renderStage3FeedbackView(wrapper);
             } else if (currentView === "stage4") {
                 renderStage4DocumentView(wrapper);
-            } else if (currentView === "stage5") {
-                renderStage5ListView(wrapper);
             } else {
                 renderGenericStageView(wrapper, currentView);
             }
