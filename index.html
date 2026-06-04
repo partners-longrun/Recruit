@@ -521,6 +521,66 @@
             }
         }
 
+        function formatDateOnly(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const str = String(dateStr);
+                const match = str.match(/^(\d{4})[-/.](\d{2})[-/.](\d{2})/);
+                if (match) {
+                    return `${match[1]}.${match[2]}.${match[3]}`;
+                }
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return str;
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}.${mm}.${dd}`;
+            } catch (e) {
+                return String(dateStr);
+            }
+        }
+
+        function formatYearMonthOnly(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const str = String(dateStr);
+                const match = str.match(/^(\d{4})[-/.](\d{2})/);
+                if (match) {
+                    return `${match[1]}.${match[2]}월`;
+                }
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return str;
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                return `${yyyy}.${mm}월`;
+            } catch (e) {
+                return String(dateStr);
+            }
+        }
+
+        function calculateDDay(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const targetDate = new Date(dateStr);
+                if (isNaN(targetDate.getTime())) return '';
+                
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+                
+                const diffTime = targetDay.getTime() - today.getTime();
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays === 0) return '오늘';
+                if (diffDays === 1) return '내일';
+                if (diffDays === -1) return '어제';
+                if (diffDays > 0) return `D-${diffDays}`;
+                return `D+${Math.abs(diffDays)}`;
+            } catch (e) {
+                return '';
+            }
+        }
+
         // --- 생명 주기 진입부 ---
         window.onload = function() {
             lucide.createIcons();
@@ -936,36 +996,150 @@
         }
 
         function buildCandidateCardHtml(cand, stepNum) {
-            const tagColor = cand.신입경력여부 === '경력' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-blue-50 text-blue-700 border-blue-100';
-            const historyText = cand.신입경력여부 === '경력' ? `경력직 / 보험 ${cand.보험경력 || '경력미정'}` : `신입 / ${cand.보험경력 || '신입'}`;
-            const formattedDate = formatDateTime(cand.created_at);
+            const isCareer = cand.신입경력여부 === '경력';
+            const careerText = isCareer ? `경력 ${cand.보험경력 || '미정'}` : '신입';
+            const tagColor = isCareer ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200';
+            
+            // 이름과 지역 결합
+            const displayRegion = cand.지역 ? `(${cand.지역})` : '';
+            const displayName = `${cand.name} ${displayRegion}`;
+            
+            let cardContentHtml = '';
+            
+            if (stepNum === 1) {
+                // 1) 가망후보자 : 이름, 지역, 신입경력유무 및 보험 경력, 유입 경로, 등록일(년월일)
+                const sourceDetail = cand.이전소속사 ? ` / ${cand.이전소속사}` : (cand.현직업 ? ` / ${cand.현직업}` : '');
+                const displaySource = `${cand.유입경로}${sourceDetail}`;
+                const displayDate = formatDateOnly(cand.created_at || cand.stage_updated);
+                
+                cardContentHtml = `
+                    <div class="text-xs text-indigo-600 font-bold flex items-center gap-1">
+                        <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+                        <span>${displaySource}</span>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
+                        <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${displayDate}</span>
+                    </div>
+                `;
+            } else if (stepNum === 2) {
+                // 2) 약속확정 : 이름, 지역, 신입경력유무 및 보험 경력, 상담일정, 상담장소, D데이 안내
+                const apt = appointmentsList.find(a => a.candidate_id === cand.id) || {};
+                const aptTime = apt.datetime ? formatDateTime(apt.datetime).substring(0, 16).replace(/-/g, '.') : '일정 미정';
+                const aptPlace = apt.장소 || '장소 미정';
+                const dday = apt.datetime ? calculateDDay(apt.datetime) : '';
+                
+                let ddayBadge = '';
+                if (dday) {
+                    let ddayColor = 'bg-rose-50 text-rose-700 border-rose-200';
+                    if (dday === '오늘' || dday === '내일') {
+                        ddayColor = 'bg-rose-600 text-white border-transparent animate-pulse';
+                    } else if (dday.startsWith('D+')) {
+                        ddayColor = 'bg-slate-100 text-slate-600 border-slate-200';
+                    }
+                    ddayBadge = `<span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${ddayColor}">${dday}</span>`;
+                }
+                
+                cardContentHtml = `
+                    <div class="text-xs text-slate-600 font-bold space-y-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="calendar-days" class="w-3.5 h-3.5 text-indigo-500"></i>
+                            <span>${aptTime}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-500"></i>
+                            <span>${aptPlace}</span>
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
+                        ${ddayBadge}
+                    </div>
+                `;
+            } else if (stepNum === 3) {
+                // 3) 상담완료 : 이름, 지역, 신입경력유무 및 보험 경력, 상담일(년월일), 상담 결과
+                const apt = appointmentsList.find(a => a.candidate_id === cand.id) || {};
+                const consultationDate = apt.datetime ? formatDateOnly(apt.datetime) : formatDateOnly(cand.stage_updated || cand.created_at);
+                const result = cand.상담결과 || '검토중';
+                
+                let resultColor = 'bg-slate-50 text-slate-600 border-slate-200';
+                if (result === '긍정적') {
+                    resultColor = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                } else if (result === '검토중') {
+                    resultColor = 'bg-amber-50 text-amber-700 border-amber-200';
+                } else if (result === '부정적') {
+                    resultColor = 'bg-rose-50 text-rose-700 border-rose-200';
+                }
+                
+                cardContentHtml = `
+                    <div class="text-xs text-slate-600 font-bold flex items-center gap-1">
+                        <i data-lucide="message-square-check" class="w-3.5 h-3.5 text-sky-500"></i>
+                        <span>${consultationDate} 상담</span>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
+                        <span class="text-[10px] font-black border px-2.5 py-0.5 rounded-md ${resultColor}">${result}</span>
+                    </div>
+                `;
+            } else if (stepNum === 4) {
+                // 4) 위촉진행 : 이름, 지역, 신입경력유무 및 보험 경력, 진행률 그래프와 완료갯수/총갯수
+                const doc = documentsList.find(d => d.candidate_id === cand.id) || {};
+                const docKeys = ['이클린서비스', '신분증', '통장사본', '가족관계증명서', '손보합격증', '생보합격증', '경력증명서', '수료증'];
+                const doneCount = docKeys.filter(k => isChecked(doc[k])).length;
+                const totalCount = docKeys.length;
+                
+                // 도트 진행률 그래프 HTML 생성 (● 및 ○ 형태를 깔끔한 원형 CSS 도트로 구현)
+                let dotsHtml = '<div class="flex gap-1">';
+                for (let i = 0; i < totalCount; i++) {
+                    if (i < doneCount) {
+                        dotsHtml += '<span class="w-2.5 h-2.5 rounded-full bg-indigo-600 border border-indigo-700"></span>';
+                    } else {
+                        dotsHtml += '<span class="w-2.5 h-2.5 rounded-full bg-slate-100 border border-slate-300"></span>';
+                    }
+                }
+                dotsHtml += '</div>';
+                
+                cardContentHtml = `
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[10px] text-slate-400 font-bold">
+                            <span>제출 서류 현황</span>
+                            <span class="text-indigo-600 text-xs font-extrabold">${doneCount}/${totalCount} 완료</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            ${dotsHtml}
+                        </div>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
+                    </div>
+                `;
+            } else if (stepNum === 5) {
+                // 5) 입사완료 : 이름, 지역, 신입경력유무 및 보험 경력, 리쿠르팅담당자, 입사년월
+                const displayJoinMonth = cand.예정입사일 ? formatYearMonthOnly(cand.예정입사일) : '입사일 미정';
+                const displayJoinText = cand.예정입사일 ? `${displayJoinMonth} 입사` : '입사 예정';
+                
+                cardContentHtml = `
+                    <div class="text-xs text-slate-600 font-bold flex items-center gap-1">
+                        <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500"></i>
+                        <span>${displayJoinText}</span>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                        <span class="flex items-center gap-1"><i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-400"></i> 담당: ${cand.위촉담당자 || '미배정'}</span>
+                    </div>
+                `;
+            }
 
             return `
-                <!-- 후보자 카드: 가로폭 넓고 그림자 짤림을 차단한 쾌적한 카드 구조 -->
-                <div onclick="openEditCandidateModal('${cand.id}')" class="bg-white p-5 rounded-2xl border border-slate-100 hover:border-indigo-500 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer space-y-3 shadow-sm">
-                    <!-- 헤더라인 -->
+                <!-- 후보자 카드: 각 단계별 특성화 구조화된 모던 레이아웃 -->
+                <div onclick="openEditCandidateModal('${cand.id}')" class="bg-white p-5 rounded-2xl border border-slate-200/80 hover:border-indigo-500 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer space-y-3 shadow-sm">
+                    <!-- 헤더라인 (공통: 이름(지역) + 신입/경력 배지) -->
                     <div class="flex justify-between items-center">
-                        <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${cand.name}</h4>
-                        <span class="text-[10px] font-black border px-2.5 py-0.5 rounded-md ${tagColor}">${cand.신입경력여부}</span>
+                        <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${displayName}</h4>
+                        <span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${careerText}</span>
                     </div>
                     
-                    <!-- 유입경로 (도트 레이아웃) -->
-                    <div class="text-xs font-bold text-indigo-600 flex items-center gap-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                        <span>유입경로: ${cand.유입경로} ${cand.소개자 ? `(${cand.소개자})` : ''}</span>
-                    </div>
-
-                    <!-- 디테일 인포 -->
-                    <div class="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                        <span>${historyText} ${cand.지역 ? `· ${cand.지역}` : ''}</span>
-                    </div>
-
-                    <!-- 구분선 및 깔끔한 풋터 -->
-                    <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
-                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
-                        <span class="flex items-center gap-0.5"><i data-lucide="clock" class="w-3 h-3"></i> ${formattedDate}</span>
-                    </div>
+                    <!-- 단계별 개별 컨텐츠 -->
+                    ${cardContentHtml}
                 </div>
             `;
         }
