@@ -469,63 +469,6 @@
             "7. 퇴사자"
         ];
 
-        // --- 생명 주기 진입부 ---
-        window.onload = function() {
-            lucide.createIcons();
-
-            // 로컬 임시 시뮬레이션 데이터 구성
-            initLocalMockDatabase();
-
-            // 뒤로가기 모달 연동 바인딩
-            window.history.pushState(null, null, window.location.href);
-            window.onpopstate = function() {
-                if (currentUser) {
-                    window.history.pushState(null, null, window.location.href);
-                    confirmLogout();
-                }
-            };
-
-            // 세션 체크 (Refresh Guard)
-            const savedSession = localStorage.getItem('RECRUIT_SESSION');
-            if (savedSession) {
-                try {
-                    currentUser = JSON.parse(savedSession);
-                    proceedToMain();
-                } catch(e) {
-                    localStorage.removeItem('RECRUIT_SESSION');
-                    showLoginView();
-                }
-            } else {
-                showLoginView();
-            }
-        };
-
-        // 로컬 목데이터 로드
-        function initLocalMockDatabase() {
-            if (!localStorage.getItem('DB_CANDIDATES_V3')) {
-                const sampleCands = [
-                    { id: "cand_1", name: "홍길순", phone: "010-1234-5678", 주민등록번호:"920512-1******", 성별:"남성", 지역:"서울 강남구", 유입경로: "블로그", 소개자: "", 신입경력여부: "경력", 현재단계: "1. 가망후보자", stage_updated: getLocalTimeString(), memo: "이직 관심 매우 높음", created_at: "2026-06-03 10:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "3년", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
-                    { id: "cand_2", name: "최윤서", phone: "010-9876-5432", 주민등록번호:"951120-2******", 성별:"여성", 지역:"경기 수원시", 유입경로: "유튜브", 소개자: "", 신입경력여부: "경력", 현재단계: "2. 약속확정", stage_updated: getLocalTimeString(), memo: "수요일 면담 확정", created_at: "2026-06-03 11:30:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "1년 이내", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
-                    { id: "cand_3", name: "강서연", phone: "010-4444-5555", 주민등록번호:"900418-2******", 성별:"여성", 지역:"인천 부평구", 유입경로: "소개", 소개자: "홍길동 FC", 신입경력여부: "경력", 현재단계: "4. 위촉진행", stage_updated: getLocalTimeString(), memo: "위촉의향 강함", created_at: "2026-05-29 14:15:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "5년 이상", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
-                    { id: "cand_4", name: "박준길", phone: "010-3333-2222", 주민등록번호:"980808-1******", 성별:"남성", 지역:"서울 송파구", 유입경로: "소개", 소개자: "박표현", 신입경력여부: "신입", 현재단계: "2. 약속확정", stage_updated: getLocalTimeString(), memo: "면담 예약 완료", created_at: "2026-06-03 17:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "신입", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false }
-                ];
-                localStorage.setItem('DB_CANDIDATES_V3', JSON.stringify(sampleCands));
-            }
-            if (!localStorage.getItem('DB_APPOINTMENTS_V3')) {
-                const sampleApts = [
-                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-03 14:00:00", result: "수요일 면담 예약 완료", next_action: "리마인드 문자 전송", 장소: "지사 사무실" },
-                    { candidate_id: "cand_4", 약속상담여부: "대기", datetime: "2026-06-03 17:00:00", result: "초기 상담 예약 성립", next_action: "본부 위치 발송", 장소: "지사 사무실" }
-                ];
-                localStorage.setItem('DB_APPOINTMENTS_V3', JSON.stringify(sampleApts));
-            }
-            if (!localStorage.getItem('DB_DOCUMENTS_V3')) {
-                const sampleDocs = [
-                    { candidate_id: "cand_3", 단톡방초대: true, 이클린서비스: true, 신분증: true, 통장사본: true, 가족관계증명서: true, 생보합격증: false, 손보합격증: false, 경력증명서: false, 수료증: false, 생보URL전달: true, 동양라이나서류: false, updated_at: getLocalTimeString(), memo: "제출 완료" }
-                ];
-                localStorage.setItem('DB_DOCUMENTS_V3', JSON.stringify(sampleDocs));
-            }
-        }
-
         // --- 구글 시트 타입 불안정 대응용 안전 불리언 검출 헬퍼 ---
         function isChecked(val) {
             if (val === true) return true;
@@ -575,6 +518,63 @@
                 return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
             } catch (e) {
                 return String(dateStr);
+            }
+        }
+
+        // --- 생명 주기 진입부 ---
+        window.onload = function() {
+            lucide.createIcons();
+
+            // 로컬 임시 시뮬레이션 데이터 구성
+            initLocalMockDatabase();
+
+            // 뒤로가기 모달 연동 바인딩
+            window.history.pushState(null, null, window.location.href);
+            window.onpopstate = function() {
+                if (currentUser) {
+                    window.history.pushState(null, null, window.location.href);
+                    confirmLogout();
+                }
+            };
+
+            // 세션 체크 (Refresh Guard)
+            const savedSession = localStorage.getItem('RECRUIT_SESSION');
+            if (savedSession) {
+                try {
+                    currentUser = JSON.parse(savedSession);
+                    proceedToMain();
+                } catch(e) {
+                    localStorage.removeItem('RECRUIT_SESSION');
+                    showLoginView();
+                }
+            } else {
+                showLoginView();
+            }
+        };
+
+        // 로컬 목데이터 로드
+        function initLocalMockDatabase() {
+            if (!localStorage.getItem('DB_CANDIDATES_V3')) {
+                const sampleCands = [
+                    { id: "cand_1", name: "홍길순", phone: "010-1234-5678", 주민등록번호:"920512-1******", 성별:"남성", 지역:"서울 강남구", 유입경로: "블로그", 소개자: "", 신입경력여부: "경력", 현재단계: "1. 가망후보자", stage_updated: getLocalTimeString(), memo: "이직 관심 매우 높음", created_at: "2026-06-03 10:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "3년", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
+                    { id: "cand_2", name: "최윤서", phone: "010-9876-5432", 주민등록번호:"951120-2******", 성별:"여성", 유입경로: "유튜브", 소개자: "", 신입경력여부: "경력", 현재단계: "2. 약속확정", stage_updated: getLocalTimeString(), memo: "수요일 면담 확정", created_at: "2026-06-03 11:30:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "1년 이내", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
+                    { id: "cand_3", name: "강서연", phone: "010-4444-5555", 주민등록번호:"900418-2******", 성별:"여성", 유입경로: "소개", 소개자: "홍길동 FC", 신입경력여부: "경력", 현재단계: "4. 위촉진행", stage_updated: getLocalTimeString(), memo: "위촉의향 강함", created_at: "2026-05-29 14:15:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "5년 이상", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false },
+                    { id: "cand_4", name: "박준길", phone: "010-3333-2222", 주민등록번호:"980808-1******", 성별:"남성", 지역:"서울 송파구", 유입경로: "소개", 소개자: "박표현", 신입경력여부: "신입", 현재단계: "2. 약속확정", stage_updated: getLocalTimeString(), memo: "면담 예약 완료", created_at: "2026-06-03 17:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "신입", 주소: "", 시험응시지역: "", 손보시험: false, 생보시험: false, 제3보험시험: false }
+                ];
+                localStorage.setItem('DB_CANDIDATES_V3', JSON.stringify(sampleCands));
+            }
+            if (!localStorage.getItem('DB_APPOINTMENTS_V3')) {
+                const sampleApts = [
+                    { candidate_id: "cand_2", 약속상담여부: "대기", datetime: "2026-06-03 14:00:00", result: "수요일 면담 예약 완료", next_action: "리마인드 문자 전송", 장소: "지사 사무실" },
+                    { candidate_id: "cand_4", 약속상담여부: "대기", datetime: "2026-06-03 17:00:00", result: "초기 상담 예약 성립", next_action: "본부 위치 발송", 장소: "지사 사무실" }
+                ];
+                localStorage.setItem('DB_APPOINTMENTS_V3', JSON.stringify(sampleApts));
+            }
+            if (!localStorage.getItem('DB_DOCUMENTS_V3')) {
+                const sampleDocs = [
+                    { candidate_id: "cand_3", 단톡방초대: true, 이클린서비스: true, 신분증: true, 통장사본: true, 가족관계증명서: true, 생보합격증: false, 손보합격증: false, 경력증명서: false, 수료증: false, 생보URL전달: true, 동양라이나서류: false, updated_at: getLocalTimeString(), memo: "제출 완료" }
+                ];
+                localStorage.setItem('DB_DOCUMENTS_V3', JSON.stringify(sampleDocs));
             }
         }
 
@@ -2399,6 +2399,62 @@
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+        }
+
+        function openConfigModal() {
+            // URL 설정 기능 제거에 따른 팝업 모달 우회 차단 처리
+            showToast("시스템 보안에 따라 API 연동 주소는 안전하게 잠금 처리되어 있습니다.", "info");
+        }
+
+        function closeConfigModal() {}
+        function saveConfig() {}
+
+        // --- 지연 캐시 이식 세팅 ---
+        function saveDocCache(doc) {
+            let list = JSON.parse(localStorage.getItem('DB_DOCUMENTS_V3')) || [];
+            list = list.filter(d => d.candidate_id !== doc.candidate_id);
+            list.push(doc);
+            localStorage.setItem('DB_DOCUMENTS_V3', JSON.stringify(list));
+        }
+
+        // --- 위촉 안내 메세지 클립보드 복사 엔진 ---
+        function sendLmsNotice(candId) {
+            const cand = candidatesList.find(c => c.id === candId);
+            if (!cand) return;
+
+            const lmsText = `[한화라이프랩 파트너스본부] ${cand.name}님, 위촉 제출서류 안내\n- 신분증 사본\n- 통장 사본\n- 이클린 서비스 등록\n- 가족관계증명서\n\n위 서류를 완비하여 제출 부탁드립니다.`;
+            
+            const tempTextArea = document.createElement("textarea");
+            tempTextArea.value = lmsText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempTextArea);
+
+            showToast("위촉 안내 메시지가 클립보드에 자동 복사되었습니다. 카톡이나 문자로 발송하세요!", "success");
+        }
+
+        // --- 최종 입사 완수 ---
+        function finalizeAdmission(candId) {
+            const cand = candidatesList.find(c => c.id === candId);
+            if (cand) {
+                cand.현재단계 = "5. 입사완료";
+                cand.stage_updated = getLocalTimeString(); 
+                showLoader("위촉 최종 승인 및 5단계 이동 중...");
+                executeUpdateCandidate(cand).then(() => {
+                    syncDatabase();
+                    switchView("stage5");
+                });
+            }
+        }
+
+        function updateCandidateInfo(candId, key) {
+            const val = key === '예정입사일' ? document.getElementById('doc-opt-join-date').value : document.getElementById('doc-opt-manager').value.trim();
+            const cand = candidatesList.find(c => c.id === candId);
+            if (cand) {
+                cand[key] = val;
+                executeUpdateCandidate(cand);
+            }
         }
     </script>
 </body>
