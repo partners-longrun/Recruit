@@ -208,7 +208,7 @@
 
         <!-- 3-1. 좌측 통합 사이드바 (LNB) - 모바일 스택 겹침 버그 패치 완료 -->
         <aside id="main-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0 z-50 transform -translate-x-full lg:translate-x-0 lg:relative lg:flex transition-transform duration-300 ease-in-out">
-            <div class="overflow-y-auto flex-1">
+            <div class="overflow-y-auto flex-1 pb-24">
                 <!-- 사이드바 상단 브랜딩 -->
                 <div class="p-6 border-b border-slate-100 flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -610,6 +610,11 @@
             document.getElementById('user-display-lbl').innerText = currentUser.이름;
             document.getElementById('user-role-lbl').innerText = currentUser.권한1;
 
+            // 모바일 뷰 강제 로그인 직후 맨 위 스크롤 리셋 장치
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+
             syncDatabase();
         }
 
@@ -705,7 +710,6 @@
             }
         }
 
-        // --- 네비게이션 제어 ---
         function switchView(viewName) {
             currentView = viewName;
             
@@ -723,9 +727,9 @@
                 const btn = document.getElementById(`btn-menu-${m}`);
                 if (btn) {
                     if (m === viewName) {
-                        btn.className = "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-indigo-600 bg-indigo-50/60 rounded-xl transition-all";
+                        btn.className = "w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-indigo-600 bg-indigo-50/60 rounded-xl transition-all";
                     } else {
-                        btn.className = "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all";
+                        btn.className = "w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all";
                     }
                 }
             });
@@ -753,6 +757,16 @@
                 } else {
                     floatBtn.classList.remove('hidden');
                 }
+            }
+
+            // 모바일 탭간 네비게이션 시 맨 위 지점부터 강제 뷰포트 스위칭
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+
+            const wrapper = document.getElementById('view-content-wrapper');
+            if (wrapper) {
+                wrapper.scrollTop = 0;
             }
 
             renderCurrentView();
@@ -908,13 +922,13 @@
                     <div class="p-6 border-b border-slate-100 bg-[#FAFBFD] flex items-center justify-between">
                         <div>
                             <h3 class="text-base font-bold text-slate-900">신규 후보자 등록</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">입력하신 정보는 <span class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded font-bold">1. 가망후보자</span> 단계로 입고됩니다.</p>
+                            <p class="text-xs text-slate-400 mt-0.5">등록완료시 가망후보자 메뉴로 저장됨</p>
                         </div>
                         <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600"><i data-lucide="user-plus" class="w-5 h-5"></i></div>
                     </div>
 
                     <form id="recruit-register-form" class="p-6 space-y-6" onsubmit="executeCandidateSubmit(event)">
-                        <!-- 입력 폼 필드 구성 (기본정보) -->
+                        <!-- 입력 폼 필드 구성 (기본정보) - 순서 변경 및 주민등록번호 넓게 처리 완료 -->
                         <div class="space-y-4">
                             <span class="text-xs font-bold text-slate-400 tracking-wider block border-b border-slate-50 pb-1">기본 정보</span>
                             <div class="grid grid-cols-2 gap-4">
@@ -924,7 +938,8 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">연락처 <span class="text-rose-500">*</span></label>
-                                    <input type="text" id="reg-phone" oninput="handlePhoneInput(this)" maxlength="13" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="010-0000-0000">
+                                    <!-- 모바일 숫자 자판 자동 대응을 위한 type="tel" 및 inputmode="numeric" 추가 -->
+                                    <input type="tel" inputmode="numeric" id="reg-phone" oninput="handlePhoneInput(this)" maxlength="13" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="010-0000-0000">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
@@ -933,18 +948,19 @@
                                     <input type="text" id="reg-region" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="예: 서울 강남구">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">주민등록번호</label>
-                                    <input type="text" id="reg-rrn" oninput="handleRrnInput(this)" maxlength="14" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="000000-0000000">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">성별</label>
                                     <select id="reg-gender" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500">
                                         <option value="선택">선택</option>
                                         <option value="남성">남성</option>
                                         <option value="여성">여성</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">주민등록번호</label>
+                                    <!-- 모바일 숫자 자판 자동 대응 및 전체 너비 확장 레이아웃 구현 -->
+                                    <input type="tel" inputmode="numeric" id="reg-rrn" oninput="handleRrnInput(this)" maxlength="14" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="000000-0000000">
                                 </div>
                             </div>
                         </div>
@@ -1047,8 +1063,8 @@
                             </div>
                         </div>
 
-                        <div class="pt-4 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
-                            <span>* 표시는 필수 구성요소입니다.</span>
+                        <!-- 맨 아래 안내문 삭제 및 정렬 구조 완성 -->
+                        <div class="pt-4 border-t border-slate-100 flex justify-end items-center text-xs text-slate-400">
                             <div class="flex gap-3">
                                 <button type="button" onclick="switchView('kanban')" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all">취소</button>
                                 <button type="submit" id="reg-submit-btn" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all shadow-lg flex items-center gap-1.5">후보자 등록</button>
@@ -1130,7 +1146,7 @@
             const phone = document.getElementById('reg-phone').value.trim();
             const rrn = document.getElementById('reg-rrn').value.trim();
             const gender = document.getElementById('reg-gender').value;
-            const region = document.getElementById('reg-region').value.trim();
+            const region = document.getElementById('reg-region') ? document.getElementById('reg-region').value.trim() : '';
             const funnel = document.getElementById('reg-funnel').value;
             const introducer = document.getElementById('reg-introducer') ? document.getElementById('reg-introducer').value.trim() : '';
             const relation = document.getElementById('reg-relation') ? document.getElementById('reg-relation').value : '';
@@ -1472,7 +1488,7 @@
         }
 
         // ==========================================
-        // [시안 6] 위촉진행 서류 관리 화면 (모바일 스페이스 최적화 및 체크박스 분리)
+        // [시안 6] 위촉진행 서류 관리 화면 (모바일 공간 최적화 및 합격증 분리 완료)
         // ==========================================
         function renderStage4DocumentView(parent) {
             const list = getPermittedCandidates().filter(c => c.현재단계.includes('위촉진행'));
@@ -1779,14 +1795,11 @@
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">보험 경력</label>
                                         <select id="edit-career" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                                             <option value="신입" ${cand.보험경력 === '신입' ? 'selected' : ''}>신입</option>
-                                            <option value="3개월" ${cand.보험경력 === '3개월' ? 'selected' : ''}>3개월</option>
-                                            <option value="6개월" ${cand.보험경력 === '6개월' ? 'selected' : ''}>6개월</option>
-                                            <option value="9개월" ${cand.보험경력 === '9개월' ? 'selected' : ''}>9개월</option>
-                                            <option value="12개월" ${cand.보험경력 === '12개월' ? 'selected' : ''}>12개월</option>
-                                            <option value="2년차" ${cand.보험경력 === '2년차' ? 'selected' : ''}>2년차</option>
-                                            <option value="3년차" ${cand.보험경력 === '3년차' ? 'selected' : ''}>3년차</option>
-                                            <option value="4년차" ${cand.보험경력 === '4년차' ? 'selected' : ''}>4년차</option>
-                                            <option value="5년차 이상" ${cand.보험경력 === '5년차 이상' ? 'selected' : ''}>5년차 이상</option>
+                                            <option value="1년 이내" ${cand.보험경력 === '1년 이내' ? 'selected' : ''}>1년 이내</option>
+                                            <option value="1년" ${cand.보험경력 === '1년' ? 'selected' : ''}>1년</option>
+                                            <option value="2년" ${cand.보험경력 === '2년' ? 'selected' : ''}>2년</option>
+                                            <option value="3년" ${cand.보험경력 === '3년' ? 'selected' : ''}>3년</option>
+                                            <option value="5년 이상" ${cand.보험경력 === '5년 이상' ? 'selected' : ''}>5년 이상</option>
                                         </select>
                                     </div>
                                 </div>
@@ -2050,7 +2063,6 @@
             }
         }
 
-
         // ==========================================
         // [시안 7] 일반 단계별 리스트 뷰 및 관리 공용 엔진
         // ==========================================
@@ -2096,7 +2108,6 @@
             parent.innerHTML = html;
         }
 
-
         // ==========================================
         // [공용 시스템 유틸리티 소스]
         // ==========================================
@@ -2116,7 +2127,7 @@
             showToast("보안 세션이 안전하게 종료되었습니다.", "success");
         }
 
-        // --- 로딩마스크 제어 함수 통합 정상 복원 완료 (ReferenceError 전면 영구 봉쇄) ---
+        // 글로벌 로딩 인디케이터 제어 함수 원상 복원 완료
         function showLoader(text = '처리 중...') {
             document.getElementById('loader-text').innerText = text;
             document.getElementById('global-loader').classList.remove('hidden');
@@ -2157,6 +2168,7 @@
         function finalizeAdmission(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
+                cand.navy_stage = "5. 입사완료";
                 cand.현재단계 = "5. 입사완료";
                 cand.stage_updated = new Date().toISOString();
                 showLoader("위촉 최종 승인 및 5단계 이동 중...");
