@@ -1027,13 +1027,11 @@
                             <label class="block text-xs font-bold text-slate-700">유입 경로 <span class="text-rose-500">*</span></label>
                             <input type="hidden" id="reg-funnel" value="유튜브">
                             <div class="grid grid-cols-3 sm:grid-cols-6 gap-2" id="funnel-btn-group">
-                                ${['소개', '홈페이지', '유튜브', '블로그', '인스타그램', '기타'].map(funnelItem => {
-                                    const activeClass = (funnelItem === '유튜브') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : '';
-                                    return `
-                                        <button type="button" onclick="selectFunnelBtn('${funnelItem}')" class="funnel-btn flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl text-xs font-bold hover:border-indigo-500 transition-all ${activeClass}">
-                                            <span class="mb-1">${funnelItem}</span>
-                                        </button>
-                                    `;
+                                ${['소개', '홈페이지', '유튜브', '블로그', '인스타그램', '기타'].map(function(funnelItem) {
+                                    var activeClass = (funnelItem === '유튜브') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : '';
+                                    return '<button type="button" onclick="selectFunnelBtn(\'' + funnelItem + '\')" class="funnel-btn flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl text-xs font-bold hover:border-indigo-500 transition-all ' + activeClass + '">' +
+                                        '<span class="mb-1">' + funnelItem + '</span>' +
+                                    '</button>';
                                 }).join('')}
                             </div>
                         </div>
@@ -1807,7 +1805,7 @@
             let timeOptions = '<option value="선택">시간 선택</option>';
             for (let i = 8; i <= 22; i++) {
                 const hourStr = String(i).padStart(2, '0') + ':00';
-                timeOptions += `<option value="${hourStr}">${hourStr}</option>`;
+                timeOptions += '<option value="' + hourStr + '">' + hourStr + '</option>';
             }
 
             const formattedDate = formatDateTime(cand.created_at);
@@ -1864,6 +1862,12 @@
                 `;
             }
 
+            var stagesSelectOptions = '';
+            for (var i = 0; i < STAGES.length; i++) {
+                var selectedAttr = cand.현재단계 === STAGES[i] ? 'selected' : '';
+                stagesSelectOptions += '<option value="' + STAGES[i] + '" ' + selectedAttr + '>' + STAGES[i] + '</option>';
+            }
+
             const modalHtml = `
                 <div id="candidate-edit-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
                     <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
@@ -1874,7 +1878,7 @@
                             <button onclick="document.getElementById('candidate-edit-overlay').remove()" class="text-white hover:bg-white/10 p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
                         </div>
                         
-                        <form id="edit-modal-form" class="p-6 space-y-6 flex-1 overflow-y-auto" onsubmit="executeCandidateEditSubmit(event, '${candId}')">
+                        <form id="edit-modal-form" class="p-6 space-y-6 flex-1 overflow-y-auto" onsubmit="executeCandidateEditSubmit(event, '${cand.id}')">
                             <div class="space-y-4">
                                 <span class="text-xs font-bold text-slate-400 tracking-wider block border-b border-slate-50 pb-1">기본 정보 수정</span>
                                 <div class="grid grid-cols-2 gap-4">
@@ -1944,7 +1948,7 @@
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">현재 진행 단계</label>
                                         <select id="edit-stage" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
-                                            ${STAGES.map(st => `<option value="${st}" ${cand.현재단계 === st ? 'selected' : ''}>${st}</option>`).join('')}
+                                            ${stagesSelectOptions}
                                         </select>
                                     </div>
                                 </div>
@@ -2085,7 +2089,7 @@
                         </div>
                         <div class="flex gap-2">
                             <button onclick="document.getElementById('quick-apt-overlay').remove()" class="flex-1 py-2 bg-slate-100 rounded-xl text-xs font-bold">취소</button>
-                            <button onclick="saveQuickApt('${candId}')" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">저장</button>
+                            <button onclick="saveQuickApt('${cand.id}')" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">저장</button>
                         </div>
                     </div>
                 </div>
@@ -2190,7 +2194,7 @@
                         </div>
                         <div class="flex gap-2">
                             <button onclick="document.getElementById('quick-stage3-overlay').remove()" class="flex-1 py-2 bg-slate-100 rounded-xl text-xs font-bold">취소</button>
-                            <button id="stage3-submit-btn" onclick="saveStage3Transition('${candId}')" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">저장 및 완료</button>
+                            <button id="stage3-submit-btn" onclick="saveStage3Transition('${cand.id}')" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">저장 및 완료</button>
                         </div>
                     </div>
                 </div>
@@ -2199,10 +2203,6 @@
         }
 
         async function saveStage3Transition(candId) {
-            const submitBtn = document.getElementById('stage3-submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent mr-2"></span> 처리 중...';
-
             const result = document.getElementById('stage3-result').value;
             const memo = document.getElementById('stage3-feedback').value.trim();
 
@@ -2313,22 +2313,6 @@
             showToast("보안 세션이 안전하게 종료되었습니다.", "success");
         }
 
-        function showLoader(text = '처리 중...') {
-            const loader = document.getElementById('global-loader');
-            const lText = document.getElementById('loader-text');
-            if (loader && lText) {
-                lText.innerText = text;
-                loader.classList.remove('hidden');
-            }
-        }
-
-        function hideLoader() {
-            const loader = document.getElementById('global-loader');
-            if (loader) {
-                loader.classList.add('hidden');
-            }
-        }
-
         function openChangePasswordModal() {
             document.getElementById('password-change-modal').classList.remove('hidden');
         }
@@ -2402,14 +2386,12 @@
         }
 
         function openConfigModal() {
-            // URL 설정 기능 제거에 따른 팝업 모달 우회 차단 처리
             showToast("시스템 보안에 따라 API 연동 주소는 안전하게 잠금 처리되어 있습니다.", "info");
         }
 
         function closeConfigModal() {}
         function saveConfig() {}
 
-        // --- 지연 캐시 이식 세팅 ---
         function saveDocCache(doc) {
             let list = JSON.parse(localStorage.getItem('DB_DOCUMENTS_V3')) || [];
             list = list.filter(d => d.candidate_id !== doc.candidate_id);
@@ -2417,7 +2399,6 @@
             localStorage.setItem('DB_DOCUMENTS_V3', JSON.stringify(list));
         }
 
-        // --- 위촉 안내 메세지 클립보드 복사 엔진 ---
         function sendLmsNotice(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (!cand) return;
@@ -2434,11 +2415,10 @@
             showToast("위촉 안내 메시지가 클립보드에 자동 복사되었습니다. 카톡이나 문자로 발송하세요!", "success");
         }
 
-        // --- 최종 입사 완수 ---
         function finalizeAdmission(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
-                cand.현재단계 = "5. 입사완료";
+                cand.currentView = "5. 입사완료";
                 cand.stage_updated = getLocalTimeString(); 
                 showLoader("위촉 최종 승인 및 5단계 이동 중...");
                 executeUpdateCandidate(cand).then(() => {
@@ -2454,6 +2434,45 @@
             if (cand) {
                 cand[key] = val;
                 executeUpdateCandidate(cand);
+            }
+        }
+
+        function renderCurrentView() {
+            const wrapper = document.getElementById('view-content-wrapper');
+            if (!wrapper) return;
+            wrapper.innerHTML = "";
+
+            if (currentView === "kanban") {
+                renderKanbanView(wrapper);
+            } else if (currentView === "register" || currentView === "register_exam") {
+                renderRegisterView(wrapper, currentView === "register_exam");
+            } else if (currentView === "stage1") {
+                renderStage1ListView(wrapper);
+            } else if (currentView === "stage2") {
+                renderStage2CalendarView(wrapper);
+            } else if (currentView === "stage3") {
+                renderStage3FeedbackView(wrapper);
+            } else if (currentView === "stage4") {
+                renderStage4DocumentView(wrapper);
+            } else {
+                renderGenericStageView(wrapper, currentView);
+            }
+            lucide.createIcons();
+        }
+
+        function showLoader(text) {
+            var loader = document.getElementById('global-loader');
+            var lText = document.getElementById('loader-text');
+            if (loader && lText) {
+                lText.innerText = text || '처리 중...';
+                loader.classList.remove('hidden');
+            }
+        }
+
+        function hideLoader() {
+            var loader = document.getElementById('global-loader');
+            if (loader) {
+                loader.classList.add('hidden');
             }
         }
     </script>
