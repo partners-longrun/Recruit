@@ -966,8 +966,8 @@
             ACTIVE_STAGES.forEach((stage, idx) => {
                 const stageList = list.filter(c => c.현재단계 === stage);
                 html += `
-                    <!-- 외각 대형 카드: p-4 패딩 조율 및 h-auto 가변 대응으로 높이 격차 제거 -->
-                    <div class="bg-slate-100 rounded-3xl p-4 flex flex-col h-auto border border-slate-200/60 shadow-xs">
+                    <!-- 외각 대형 카드: 패딩 조율(px-2 py-4) 및 h-auto 가변 대응으로 내부 카드 폭 극대화 -->
+                    <div class="bg-slate-100 rounded-3xl px-2 py-4 flex flex-col h-auto border border-slate-200/60 shadow-xs">
                         <div class="flex justify-between items-center mb-4 px-1.5">
                             <span class="text-sm font-black text-slate-700 flex items-center gap-2">
                                 <span class="w-3 h-3 rounded-full bg-indigo-600"></span> ${stage.substring(3)}
