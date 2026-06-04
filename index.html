@@ -230,10 +230,12 @@
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block px-2 mb-2">입력</span>
                         <div class="space-y-1">
                             <button onclick="switchView('register')" id="btn-menu-register" class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all">
-                                <i data-lucide="user-plus" class="w-4.5 h-4.5"></i> 후보자 입력
+                                <i data-lucide="user-plus" class="w-4.5 h-4.5"></i>
+                                <span>후보자 등록</span>
                             </button>
                             <button onclick="switchView('register_exam')" id="btn-menu-exam" class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all">
-                                <i data-lucide="file-signature" class="w-4.5 h-4.5"></i> 시험 신청
+                                <i data-lucide="file-signature" class="w-4.5 h-4.5"></i>
+                                <span>시험 신청</span>
                             </button>
                         </div>
                     </div>
@@ -325,7 +327,7 @@
                     </button>
                     
                     <button onclick="switchView('register')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/10 flex items-center gap-1.5 transition-all">
-                        <i data-lucide="plus" class="w-4 h-4"></i> 후보자 추가
+                        <i data-lucide="plus" class="w-4 h-4"></i> 후보자 등록
                     </button>
                 </div>
             </header>
@@ -337,7 +339,7 @@
     </div>
 
     <!-- 글로벌 플로팅 홈 버튼 (전체현황 복귀 전용) - 소형화 및 연한 오렌지색 리모델링 -->
-    <button id="floating-home-btn" onclick="switchView('kanban')" class="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 bg-[#FFE8D6] hover:bg-[#FFD8BE] text-[#D97706] border border-orange-200 w-12 h-12 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center hidden hover:scale-105 duration-200">
+    <button id="floating-home-btn" onclick="switchView('kanban')" class="fixed bottom-6 right-6 lg:bottom-8 lg:right-8 bg-[#FF7A00] hover:bg-[#E06B00] text-white border border-orange-600 w-12 h-12 rounded-full shadow-2xl transition-all z-40 flex items-center justify-center hidden hover:scale-105 duration-200">
         <i data-lucide="home" class="w-5 h-5"></i>
     </button>
 
@@ -443,10 +445,10 @@
         function initLocalMockDatabase() {
             if (!localStorage.getItem('DB_CANDIDATES_V3')) {
                 const sampleCands = [
-                    { id: "cand_1", name: "홍길순", phone: "010-1234-5678", 주민등록번호:"920512-1******", 성별:"남성", 유입경로: "블로그", 소개자: "", 신입경력여부: "경력직", 현재단계: "1. 가망후보자", stage_updated: new Date().toISOString(), memo: "이직 관심 매우 높음", created_at: "2026-06-03 10:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "경력미정" },
-                    { id: "cand_2", name: "최윤서", phone: "010-9876-5432", 주민등록번호:"951120-2******", 성별:"여성", 유입경로: "유튜브", 소개자: "", 신입경력여부: "경력직", 현재단계: "2. 약속확정", stage_updated: new Date().toISOString(), memo: "수요일 면담 확정", created_at: "2026-06-03 11:30:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "1년 이내" },
-                    { id: "cand_3", name: "강서연", phone: "010-4444-5555", 주민등록번호:"900418-2******", 성별:"여성", 유입경로: "소개", 소개자: "홍길동 FC", 신입경력여부: "경력직", 현재단계: "4. 위촉진행", stage_updated: new Date().toISOString(), memo: "위촉의향 강함", created_at: "2026-05-29 14:15:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "5년 이상" },
-                    { id: "cand_4", name: "박준길", phone: "010-3333-2222", 주민등록번호:"980808-1******", 성별:"남성", 유입경로: "소개", 소개자: "박표현", 신입경력여부: "신입", 현재단계: "2. 약속확정", stage_updated: new Date().toISOString(), memo: "면담 예약 완료", created_at: "2026-06-03 17:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "신입" }
+                    { id: "cand_1", name: "홍길순", phone: "010-1234-5678", 주민등록번호:"920512-1******", 성별:"남성", 지역:"서울 강남구", 유입경로: "블로그", 소개자: "", 신입경력여부: "경력", 현재단계: "1. 가망후보자", stage_updated: new Date().toISOString(), memo: "이직 관심 매우 높음", created_at: "2026-06-03 10:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "3년" },
+                    { id: "cand_2", name: "최윤서", phone: "010-9876-5432", 주민등록번호:"951120-2******", 성별:"여성", 지역:"경기 수원시", 유입경로: "유튜브", 소개자: "", 신입경력여부: "경력", 현재단계: "2. 약속확정", stage_updated: new Date().toISOString(), memo: "수요일 면담 확정", created_at: "2026-06-03 11:30:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "1년 이내" },
+                    { id: "cand_3", name: "강서연", phone: "010-4444-5555", 주민등록번호:"900418-2******", 성별:"여성", 지역:"인천 부평구", 유입경로: "소개", 소개자: "홍길동 FC", 신입경력여부: "경력", 현재단계: "4. 위촉진행", stage_updated: new Date().toISOString(), memo: "위촉의향 강함", created_at: "2026-05-29 14:15:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "5년 이상" },
+                    { id: "cand_4", name: "박준길", phone: "010-3333-2222", 주민등록번호:"980808-1******", 성별:"남성", 지역:"서울 송파구", 유입경로: "소개", 소개자: "박표현", 신입경력여부: "신입", 현재단계: "2. 약속확정", stage_updated: new Date().toISOString(), memo: "면담 예약 완료", created_at: "2026-06-03 17:00:00", 위촉담당자: "박용수", 예정입사일: "", 상담결과: "", 보험경력: "신입" }
                 ];
                 localStorage.setItem('DB_CANDIDATES_V3', JSON.stringify(sampleCands));
             }
@@ -721,9 +723,9 @@
                 const btn = document.getElementById(`btn-menu-${m}`);
                 if (btn) {
                     if (m === viewName) {
-                        btn.className = "w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-indigo-600 bg-indigo-50/60 rounded-xl transition-all";
+                        btn.className = "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-indigo-600 bg-indigo-50/60 rounded-xl transition-all";
                     } else {
-                        btn.className = "w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all";
+                        btn.className = "w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all";
                     }
                 }
             });
@@ -862,8 +864,8 @@
 
         // --- 공용 후보자 카드 템플릿 빌더 (투박한 회색 중첩 테두리 완전 박살 낸 고퀄 디자인) ---
         function buildCandidateCardHtml(cand, stepNum) {
-            const tagColor = cand.신입경력여부 === '경력직' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-blue-50 text-blue-700 border-blue-100';
-            const historyText = cand.신입경력여부 === '경력직' ? `경력직 / 보험 ${cand.보험경력 || '경력미정'}` : `신입 / ${cand.보험경력 || '신입'}`;
+            const tagColor = cand.신입경력여부 === '경력' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-blue-50 text-blue-700 border-blue-100';
+            const historyText = cand.신입경력여부 === '경력' ? `경력직 / 보험 ${cand.보험경력 || '경력미정'}` : `신입 / ${cand.보험경력 || '신입'}`;
             const formattedDate = formatDateTime(cand.created_at);
 
             return `
@@ -883,7 +885,7 @@
                     <!-- 디테일 인포 (도트 포인트 매칭으로 박스 중첩 완화) -->
                     <div class="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
                         <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
-                        <span>${historyText}</span>
+                        <span>${historyText} ${cand.지역 ? `· ${cand.지역}` : ''}</span>
                     </div>
 
                     <!-- 얇은 선 구분선 및 깔끔한 무색 배경 풋터 -->
@@ -901,19 +903,12 @@
         function renderRegisterView(parent, isExamOnly = false) {
             const todayStr = formatDateTime(new Date().toISOString());
             
-            // 시간 드롭다운 옵션 조립 (08:00 ~ 22:00)
-            let timeOptions = '<option value="선택">시간 선택</option>';
-            for (let i = 8; i <= 22; i++) {
-                const hourStr = String(i).padStart(2, '0') + ':00';
-                timeOptions += `<option value="${hourStr}">${hourStr}</option>`;
-            }
-
             parent.innerHTML = `
                 <div class="bg-white rounded-3xl border border-slate-200 shadow-sm max-w-2xl mx-auto overflow-hidden">
                     <div class="p-6 border-b border-slate-100 bg-[#FAFBFD] flex items-center justify-between">
                         <div>
                             <h3 class="text-base font-bold text-slate-900">신규 후보자 등록</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">면담 스케줄 입력 시 <span class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded font-bold">2. 약속확정</span> 단계로 고속 연계 입고됩니다.</p>
+                            <p class="text-xs text-slate-400 mt-0.5">입력하신 정보는 <span class="bg-indigo-50 text-indigo-700 px-1 py-0.5 rounded font-bold">1. 가망후보자</span> 단계로 입고됩니다.</p>
                         </div>
                         <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600"><i data-lucide="user-plus" class="w-5 h-5"></i></div>
                     </div>
@@ -929,14 +924,20 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">연락처 <span class="text-rose-500">*</span></label>
-                                    <input type="text" id="reg-phone" oninput="handlePhoneInput(this)" maxlength="13" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="000-0000-0000">
+                                    <input type="text" id="reg-phone" oninput="handlePhoneInput(this)" maxlength="13" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="010-0000-0000">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">지역</label>
+                                    <input type="text" id="reg-region" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="예: 서울 강남구">
+                                </div>
+                                <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">주민등록번호</label>
                                     <input type="text" id="reg-rrn" oninput="handleRrnInput(this)" maxlength="14" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500" placeholder="000000-0000000">
                                 </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">성별</label>
                                     <select id="reg-gender" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-indigo-500">
@@ -948,13 +949,13 @@
                             </div>
                         </div>
 
-                        <!-- 유입경로 (새 카테고리 구성 적용) -->
+                        <!-- 유입경로 -->
                         <div class="space-y-3">
                             <label class="block text-xs font-bold text-slate-700">유입 경로 <span class="text-rose-500">*</span></label>
-                            <input type="hidden" id="reg-funnel" value="${isExamOnly ? '기타' : '소개'}">
+                            <input type="hidden" id="reg-funnel" value="유튜브">
                             <div class="grid grid-cols-3 sm:grid-cols-6 gap-2" id="funnel-btn-group">
                                 ${['소개', '홈페이지', '유튜브', '블로그', '인스타그램', '기타'].map(funnelItem => {
-                                    const activeClass = (!isExamOnly && funnelItem === '소개') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : '';
+                                    const activeClass = (funnelItem === '유튜브') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : '';
                                     return `
                                         <button type="button" onclick="selectFunnelBtn('${funnelItem}')" class="funnel-btn flex flex-col items-center justify-center p-3 border border-slate-200 rounded-xl text-xs font-bold hover:border-indigo-500 transition-all ${activeClass}">
                                             <span class="mb-1">${funnelItem}</span>
@@ -965,7 +966,7 @@
                         </div>
 
                         <!-- 소개 관계 드롭다운 전환 -->
-                        <div id="introducer-container" class="space-y-4 p-4.5 bg-slate-50 rounded-2xl ${isExamOnly ? 'hidden' : ''}">
+                        <div id="introducer-container" class="space-y-4 p-4.5 bg-slate-50 rounded-2xl hidden">
                             <span class="text-xs font-bold text-slate-500">소개자 정보</span>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
@@ -996,7 +997,7 @@
                                     <input type="hidden" id="reg-type" value="신입">
                                     <div class="grid grid-cols-2 gap-2">
                                         <button type="button" onclick="selectTypeBtn('신입')" class="type-btn py-2.5 border rounded-xl text-xs font-bold hover:border-indigo-500 bg-indigo-50 border-indigo-500 text-indigo-700">신입</button>
-                                        <button type="button" onclick="selectTypeBtn('경력직')" class="type-btn py-2.5 border rounded-xl text-xs font-bold hover:border-indigo-500">경력직</button>
+                                        <button type="button" onclick="selectTypeBtn('경력')" class="type-btn py-2.5 border rounded-xl text-xs font-bold hover:border-indigo-500">경력</button>
                                     </div>
                                 </div>
                                 <div>
@@ -1010,37 +1011,19 @@
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">보험 경력</label>
                                     <select id="reg-career" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                                         <option value="신입">신입</option>
-                                        <option value="1년 이내">1년 이내</option>
-                                        <option value="1년">1년</option>
-                                        <option value="2년">2년</option>
-                                        <option value="3년">3년</option>
-                                        <option value="5년 이상">5년 이상</option>
+                                        <option value="3개월">3개월</option>
+                                        <option value="6개월">6개월</option>
+                                        <option value="9개월">9개월</option>
+                                        <option value="12개월">12개월</option>
+                                        <option value="2년차">2년차</option>
+                                        <option value="3년차">3년차</option>
+                                        <option value="4년차">4년차</option>
+                                        <option value="5년차 이상">5년차 이상</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-bold text-slate-700 mb-1.5">이전 소속사</label>
                                     <input type="text" id="reg-prev-company" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="경력직인 경우 입력">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 면담 예약 약속 일정 -->
-                        <div class="space-y-4">
-                            <span class="text-xs font-bold text-slate-400 tracking-wider block border-b border-slate-50 pb-1">면담 예약 (선택)</span>
-                            <div class="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">면담 예정일</label>
-                                    <input type="date" id="reg-apt-date" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">면담 시간</label>
-                                    <select id="reg-apt-time" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
-                                        ${timeOptions}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 mb-1.5">면담 장소</label>
-                                    <input type="text" id="reg-apt-place" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" placeholder="지사 사무실 / 카페 등">
                                 </div>
                             </div>
                         </div>
@@ -1147,6 +1130,7 @@
             const phone = document.getElementById('reg-phone').value.trim();
             const rrn = document.getElementById('reg-rrn').value.trim();
             const gender = document.getElementById('reg-gender').value;
+            const region = document.getElementById('reg-region').value.trim();
             const funnel = document.getElementById('reg-funnel').value;
             const introducer = document.getElementById('reg-introducer') ? document.getElementById('reg-introducer').value.trim() : '';
             const relation = document.getElementById('reg-relation') ? document.getElementById('reg-relation').value : '';
@@ -1158,14 +1142,7 @@
             const memo = document.getElementById('reg-memo').value.trim();
 
             const candId = "cand_" + Date.now();
-
-            // 면담 일정 체크에 따른 자동 단계 지정 프로세스
-            const aptDate = document.getElementById('reg-apt-date').value;
-            const aptTime = document.getElementById('reg-apt-time').value;
-            const aptPlace = document.getElementById('reg-apt-place').value.trim();
-            
-            const hasAppointment = (aptDate && aptTime !== '선택');
-            const calculatedStage = hasAppointment ? "2. 약속확정" : "1. 가망후보자";
+            const formattedTimeStr = formatDateTime(new Date().toISOString());
 
             const candData = {
                 id: candId,
@@ -1173,6 +1150,7 @@
                 phone,
                 주민등록번호: rrn,
                 성별: gender,
+                지역: region,
                 유입경로: funnel,
                 소개자: introducer,
                 소개자관계: relation,
@@ -1180,10 +1158,10 @@
                 현직업: job,
                 보험경력: career,
                 이전소속사: company,
-                현재단계: calculatedStage, 
-                stage_updated: new Date().toISOString(),
+                현재단계: "1. 가망후보자", 
+                stage_updated: formattedTimeStr,
                 memo,
-                created_at: new Date().toISOString().substring(0, 10),
+                created_at: formattedTimeStr,
                 위촉담당자: recruiter,
                 예정입사일: "",
                 상담결과: ""
@@ -1202,20 +1180,6 @@
                 }
             } catch(e) {
                 saveCandidateLocally(candData);
-            }
-
-            // 면담 예약 데이터 저장 연동
-            if (hasAppointment) {
-                const formattedDateTime = `${aptDate} ${aptTime}:00`; // 'yyyy-mm-dd hh:mm:ss' 형식 보존
-                const aptData = {
-                    candidate_id: candId,
-                    약속상담여부: "대기",
-                    datetime: formattedDateTime,
-                    result: "초기 등록과 동시에 성립된 면담 예약",
-                    next_action: "상담 진행",
-                    장소: aptPlace || "지사 사무실"
-                };
-                await executeSaveAppointment(aptData);
             }
 
             await syncDatabase();
@@ -1287,6 +1251,7 @@
                                     <div class="flex flex-wrap gap-1.5 mt-2">
                                         <span class="bg-indigo-50 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-full">${c.유입경로} 유입</span>
                                         ${c.현직업 ? `<span class="bg-slate-50 text-slate-500 text-xs font-bold px-2 py-0.5 rounded-full">${c.현직업}</span>` : ''}
+                                        ${c.지역 ? `<span class="bg-indigo-50/50 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded-full">${c.지역}</span>` : ''}
                                         <span class="text-xs text-slate-400 font-medium ml-1">등록일: ${formattedDate}</span>
                                     </div>
                                 </div>
@@ -1759,9 +1724,15 @@
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
+                                        <label class="block text-xs font-bold text-slate-700 mb-1.5">지역</label>
+                                        <input type="text" id="edit-region" value="${cand.지역 || ''}" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
+                                    </div>
+                                    <div>
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">주민등록번호</label>
                                         <input type="text" id="edit-rrn" oninput="handleRrnInput(this)" maxlength="14" value="${cand.주민등록번호 || ''}" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                                     </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">성별</label>
                                         <select id="edit-gender" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
@@ -1801,18 +1772,21 @@
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">유형</label>
                                         <select id="edit-type" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none" onchange="handleEditTypeChange(this.value)">
                                             <option value="신입" ${cand.신입경력여부 === '신입' ? 'selected' : ''}>신입</option>
-                                            <option value="경력직" ${cand.신입경력여부 === '경력직' ? 'selected' : ''}>경력직</option>
+                                            <option value="경력" ${cand.신입경력여부 === '경력' ? 'selected' : ''}>경력</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label class="block text-xs font-bold text-slate-700 mb-1.5">보험 경력</label>
                                         <select id="edit-career" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                                             <option value="신입" ${cand.보험경력 === '신입' ? 'selected' : ''}>신입</option>
-                                            <option value="1년 이내" ${cand.보험경력 === '1년 이내' ? 'selected' : ''}>1년 이내</option>
-                                            <option value="1년" ${cand.보험경력 === '1년' ? 'selected' : ''}>1년</option>
-                                            <option value="2년" ${cand.보험경력 === '2년' ? 'selected' : ''}>2년</option>
-                                            <option value="3년" ${cand.보험경력 === '3년' ? 'selected' : ''}>3년</option>
-                                            <option value="5년 이상" ${cand.보험경력 === '5년 이상' ? 'selected' : ''}>5년 이상</option>
+                                            <option value="3개월" ${cand.보험경력 === '3개월' ? 'selected' : ''}>3개월</option>
+                                            <option value="6개월" ${cand.보험경력 === '6개월' ? 'selected' : ''}>6개월</option>
+                                            <option value="9개월" ${cand.보험경력 === '9개월' ? 'selected' : ''}>9개월</option>
+                                            <option value="12개월" ${cand.보험경력 === '12개월' ? 'selected' : ''}>12개월</option>
+                                            <option value="2년차" ${cand.보험경력 === '2년차' ? 'selected' : ''}>2년차</option>
+                                            <option value="3년차" ${cand.보험경력 === '3년차' ? 'selected' : ''}>3년차</option>
+                                            <option value="4년차" ${cand.보험경력 === '4년차' ? 'selected' : ''}>4년차</option>
+                                            <option value="5년차 이상" ${cand.보험경력 === '5년차 이상' ? 'selected' : ''}>5년차 이상</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1869,6 +1843,7 @@
             cand.name = document.getElementById('edit-name').value.trim();
             cand.phone = document.getElementById('edit-phone').value.trim();
             cand.주민등록번호 = document.getElementById('edit-rrn').value.trim();
+            cand.지역 = document.getElementById('edit-region').value.trim();
             cand.성별 = document.getElementById('edit-gender').value;
             cand.유입경로 = document.getElementById('edit-funnel').value;
             cand.소개자 = document.getElementById('edit-introducer').value.trim();
