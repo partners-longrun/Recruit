@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="manifest" href="manifest.json">
     <title>파트너스본부 리쿠르팅 관리 시스템</title>
     <!-- 카카오톡 아웃링크 강제 전환 스크립트 최상단 주입 -->
     <script>
@@ -156,6 +157,9 @@
 
                     <button type="submit" id="login-submit-btn" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center gap-1.5">
                         보안 로그인 <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                    <button type="button" id="pwa-install-btn-login" class="hidden w-full py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 border border-slate-200 shadow-sm">
+                        <i data-lucide="download" class="w-4 h-4 text-indigo-600"></i> 모바일 앱 설치하여 사용하기
                     </button>
                 </form>
 
@@ -1496,6 +1500,7 @@
                 현직업: job,
                 보험경력: career,
                 이전소속사: company,
+                현재단계: "1. 가망후보자",
                 stage_updated: formattedTimeStr,
                 memo1: memo,
                 memo2: "",
@@ -3263,6 +3268,57 @@
                 loader.classList.add('hidden');
             }
         }
+
+        // PWA 서비스 워커 등록
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered successfully', reg))
+                    .catch(err => console.error('Service Worker registration failed', err));
+            });
+        }
+
+        // PWA 설치 프롬프트 연동 제어
+        let deferredPrompt;
+        const installBtnSidebar = document.getElementById('pwa-install-btn');
+        const installBtnLogin = document.getElementById('pwa-install-btn-login');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // 브라우저의 기본 설치 프롬프트 방지
+            e.preventDefault();
+            // 이벤트 보관
+            deferredPrompt = e;
+            
+            // 두 설치 버튼을 보이게 설정
+            if (installBtnSidebar) installBtnSidebar.classList.remove('hidden');
+            if (installBtnLogin) installBtnLogin.classList.remove('hidden');
+        });
+
+        async function triggerPwaInstall() {
+            if (!deferredPrompt) return;
+            // 설치 대화 상자 노출
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to PWA install: ${outcome}`);
+            deferredPrompt = null;
+            
+            // 설치 완료 후 두 버튼을 다시 숨김
+            if (installBtnSidebar) installBtnSidebar.classList.add('hidden');
+            if (installBtnLogin) installBtnLogin.classList.add('hidden');
+        }
+
+        if (installBtnSidebar) {
+            installBtnSidebar.addEventListener('click', triggerPwaInstall);
+        }
+        if (installBtnLogin) {
+            installBtnLogin.addEventListener('click', triggerPwaInstall);
+        }
+
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA app was successfully installed');
+            if (installBtnSidebar) installBtnSidebar.classList.add('hidden');
+            if (installBtnLogin) installBtnLogin.classList.add('hidden');
+        });
     </script>
 </body>
 </html>
