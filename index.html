@@ -444,6 +444,7 @@
         
         let currentView = "kanban"; // 기본 기동 뷰
         let stage1SubFilter = "ALL"; // 가망후보자 서브 필터링 상태값
+        let stage2SubFilter = "ALL"; // 약속확정 서브 필터링 상태값
         let stage3SubFilter = "ALL"; // 상담완료 서브 필터링 상태값
         let stage5SubFilter = "ALL"; // 입사완료 서브 필터링 상태값
 
@@ -654,9 +655,43 @@
 
         // --- 로그인 및 세션 관리 ---
         function showLoginView() {
-            document.getElementById('login-container').classList.remove('hidden');
-            document.getElementById('dashboard-container').classList.add('hidden');
-            document.getElementById('password-force-container').classList.add('hidden');
+            try {
+                const loginCont = document.getElementById('login-container');
+                const dashCont = document.getElementById('dashboard-container');
+                const pwForceCont = document.getElementById('password-force-container');
+                
+                if (loginCont) loginCont.classList.remove('hidden');
+                if (dashCont) dashCont.classList.add('hidden');
+                if (pwForceCont) pwForceCont.classList.add('hidden');
+            } catch (e) {
+                console.error("showLoginView UI toggling error:", e);
+            }
+            
+            // 로그인 버튼 리셋
+            try {
+                const submitBtn = document.getElementById('login-submit-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '보안 로그인 <i data-lucide="arrow-right" class="w-4 h-4"></i>';
+                }
+            } catch (e) {
+                console.error("showLoginView button reset error:", e);
+            }
+            
+            try {
+                const loginPw = document.getElementById('login-pw');
+                if (loginPw) loginPw.value = '';
+            } catch (e) {
+                console.error("showLoginView password clear error:", e);
+            }
+            
+            try {
+                if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                    lucide.createIcons();
+                }
+            } catch (e) {
+                console.error("showLoginView lucide rendering error:", e);
+            }
         }
 
         async function handleLogin(e) {
@@ -987,8 +1022,8 @@
                             </span>
                             <span onclick="switchView('stage${idx + 1}')" class="bg-white px-3 py-1 rounded-full text-xs font-black text-slate-600 shadow-xs cursor-pointer hover:text-indigo-600 transition-colors">${stageList.length}</span>
                         </div>
-                        <!-- 내부 스크롤 및 패딩 p-1.5 주입으로 테두리/그림자 짤림 전면 방지 -->
-                        <div class="space-y-3 flex-1 overflow-y-auto max-h-[450px] p-1.5 pr-2">
+                        <!-- 내부 스크롤바 제거하여 내용대로 가변 확장 -->
+                        <div class="space-y-3 flex-1 p-1.5 pr-2">
                 `;
 
                 if (stageList.length === 0) {
@@ -1173,7 +1208,7 @@
                         <span>${displayJoinText}</span>
                     </div>
                     <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
-                        <span class="flex items-center gap-1"><i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-400"></i> 담당: ${cand.위촉담당자 || '미배정'}</span>
+                        <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
                     </div>
                 `;
             }
@@ -1513,7 +1548,7 @@
                             <button onclick="setStage1Filter('ALL')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'ALL' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">전체 ${countAll}</button>
                             <button onclick="setStage1Filter('CAREER')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'CAREER' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">경력 ${countCareer}</button>
                             <button onclick="setStage1Filter('NEW')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'NEW' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">신입 ${countNew}</button>
-                            <button onclick="setStage1Filter('EXAM')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'EXAM' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">시험대기 ${countExam}</button>
+                            <button onclick="setStage1Filter('EXAM')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'EXAM' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">시험 ${countExam}</button>
                         </div>
                     </div>
 
@@ -1728,19 +1763,91 @@
         function renderStage2CalendarView(parent) {
             const list = getPermittedCandidates().filter(c => c.현재단계 && c.현재단계.includes('약속확정'));
             
+            // 주간 계산을 위한 날짜 경계값 (월요일 시작)
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            const dayOfWeek = now.getDay(); 
+            const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            const thisMon = new Date(now);
+            thisMon.setDate(now.getDate() + diffToMon);
+            thisMon.setHours(0,0,0,0);
+            
+            const thisSun = new Date(thisMon);
+            thisSun.setDate(thisMon.getDate() + 6);
+            thisSun.setHours(23,59,59,999);
+            
+            const nextMon = new Date(thisMon);
+            nextMon.setDate(thisMon.getDate() + 7);
+            nextMon.setHours(0,0,0,0);
+            
+            const nextSun = new Date(nextMon);
+            nextSun.setDate(nextMon.getDate() + 6);
+            nextSun.setHours(23,59,59,999);
+
+            // 약속 목록을 포함한 상태 필터링 적용
+            let filtered = [];
+            if (stage2SubFilter === "ALL") {
+                filtered = [...list];
+            } else {
+                filtered = list.filter(c => {
+                    const apt = appointmentsList.find(a => a.candidate_id === c.id);
+                    if (!apt || !apt.datetime) return false;
+                    const aptDate = new Date(apt.datetime.replace(/-/g, '/'));
+                    
+                    if (stage2SubFilter === "THIS_WEEK") {
+                        return aptDate >= thisMon && aptDate <= thisSun;
+                    } else if (stage2SubFilter === "NEXT_WEEK") {
+                        return aptDate >= nextMon && aptDate <= nextSun;
+                    } else if (stage2SubFilter === "LATER") {
+                        return aptDate > nextSun;
+                    }
+                    return true;
+                });
+            }
+
+            // 개수 카운팅
+            const countAll = list.length;
+            const countThisWeek = list.filter(c => {
+                const apt = appointmentsList.find(a => a.candidate_id === c.id);
+                if (!apt || !apt.datetime) return false;
+                const aptDate = new Date(apt.datetime.replace(/-/g, '/'));
+                return aptDate >= thisMon && aptDate <= thisSun;
+            }).length;
+            const countNextWeek = list.filter(c => {
+                const apt = appointmentsList.find(a => a.candidate_id === c.id);
+                if (!apt || !apt.datetime) return false;
+                const aptDate = new Date(apt.datetime.replace(/-/g, '/'));
+                return aptDate >= nextMon && aptDate <= nextSun;
+            }).length;
+            const countLater = list.filter(c => {
+                const apt = appointmentsList.find(a => a.candidate_id === c.id);
+                if (!apt || !apt.datetime) return false;
+                const aptDate = new Date(apt.datetime.replace(/-/g, '/'));
+                return aptDate > nextSun;
+            }).length;
+
             let html = `
                 <div class="space-y-4">
+                    <div class="bg-white border border-slate-200 p-4 rounded-2xl flex items-center justify-between shadow-sm">
+                        <div class="flex gap-2">
+                            <button onclick="setStage2Filter('ALL')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage2SubFilter === 'ALL' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">전체 ${countAll}</button>
+                            <button onclick="setStage2Filter('THIS_WEEK')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage2SubFilter === 'THIS_WEEK' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">이번주 ${countThisWeek}</button>
+                            <button onclick="setStage2Filter('NEXT_WEEK')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage2SubFilter === 'NEXT_WEEK' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">다음주 ${countNextWeek}</button>
+                            <button onclick="setStage2Filter('LATER')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage2SubFilter === 'LATER' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">이후 ${countLater}</button>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             `;
 
-            if (list.length === 0) {
+            if (filtered.length === 0) {
                 html += `
                     <div class="col-span-full bg-white rounded-3xl p-12 text-center border border-slate-200">
                         <p class="text-sm text-slate-400 font-bold">면담 일정이 비어 있습니다.</p>
                     </div>
                 `;
             } else {
-                list.forEach(c => {
+                filtered.forEach(c => {
                     const isCareer = c.신입경력여부 === '경력';
                     const careerText = isCareer ? `경력 ${c.보험경력 || '미정'}` : '신입';
                     const tagColor = isCareer ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200';
@@ -1807,6 +1914,11 @@
             parent.innerHTML = html;
         }
 
+        function setStage2Filter(filterType) {
+            stage2SubFilter = filterType;
+            renderCurrentView();
+        }
+
         // ==========================================
         // [시안 5] 상담완료 피드백 관리 뷰 (오동작 수정 완료)
         // ==========================================
@@ -1869,13 +1981,18 @@
                         resultColor = 'bg-rose-50 text-rose-700 border-rose-200';
                     }
 
+                    let badgeStackHtml = `<span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${careerText}</span>`;
+                    badgeStackHtml += `<span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${resultColor} mt-1">${result}</span>`;
+
                     html += `
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-lg transition-all duration-200 flex flex-col justify-between gap-3 shadow-sm">
                             <div onclick="openEditCandidateModal('${c.id}')" class="cursor-pointer space-y-3">
                                 <!-- 헤더라인 -->
-                                <div class="flex justify-between items-center">
+                                <div class="flex justify-between items-start">
                                     <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${displayName}</h4>
-                                    <span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${careerText}</span>
+                                    <div class="flex flex-col items-end shrink-0">
+                                        ${badgeStackHtml}
+                                    </div>
                                 </div>
                                 
                                 <!-- 컨텐츠 -->
@@ -1891,7 +2008,6 @@
                                 
                                 <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
                                     <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${c.위촉담당자 || '미배정'}</span>
-                                    <span class="text-[10px] font-black border px-2.5 py-0.5 rounded-md ${resultColor}">${result}</span>
                                 </div>
                             </div>
 
@@ -1923,34 +2039,71 @@
             const list = getPermittedCandidates().filter(c => c.현재단계 && c.현재단계.includes('위촉진행'));
             
             let html = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- 후보자 목록 영역 - 모바일 가로 가변 높이 및 여백 최적화 완수 -->
-                    <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm lg:h-[70vh] h-auto max-h-[250px] lg:max-h-none overflow-y-auto space-y-2">
-                        <span class="text-xs font-bold text-slate-400 block px-2 mb-2">위촉 후보자 목록 (${list.length}명)</span>
+                <div class="flex flex-col space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             `;
 
             if (list.length === 0) {
                 html += `
-                    <div class="text-center py-12 text-xs text-slate-400">진행 중인 위촉 건이 없습니다.</div>
+                    <div class="col-span-full bg-white rounded-3xl p-16 text-center border border-slate-200">
+                        <i data-lucide="file-check-2" class="w-12 h-12 text-slate-300 mx-auto stroke-1 mb-3"></i>
+                        <h4 class="text-xs font-bold text-slate-400">조건에 부합하는 위촉진행자가 없습니다.</h4>
+                    </div>
                 `;
             } else {
                 list.forEach(c => {
+                    const isCareer = c.신입경력여부 === '경력';
+                    const careerText = isCareer ? `경력 ${c.보험경력 || '미정'}` : '신입';
+                    const tagColor = isCareer ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200';
+                    
+                    const displayRegion = c.지역 ? `(${c.지역})` : '';
+                    const displayName = `${c.name} ${displayRegion}`;
+                    
                     const doc = docDraftBuffer[c.id] || documentsList.find(d => d.candidate_id === c.id) || {};
                     const docKeys = ['이클린서비스', '신분증', '통장사본', '가족관계증명서', '손보합격증', '생보합격증', '경력증명서', '수료증'];
                     const doneCount = docKeys.filter(k => isChecked(doc[k])).length;
-                    const pct = Math.round((doneCount / docKeys.length) * 100);
+                    const totalCount = docKeys.length;
+                    
+                    let dotsHtml = '<div class="flex gap-1">';
+                    for (let i = 0; i < totalCount; i++) {
+                        if (i < doneCount) {
+                            dotsHtml += '<span class="w-2.5 h-2.5 rounded-full bg-indigo-600 border border-indigo-700"></span>';
+                        } else {
+                            dotsHtml += '<span class="w-2.5 h-2.5 rounded-full bg-slate-100 border border-slate-300"></span>';
+                        }
+                    }
+                    dotsHtml += '</div>';
 
                     html += `
-                        <div onclick="renderDocDetailSlot('${c.id}')" class="p-4 border border-slate-100 rounded-xl hover:border-indigo-500 hover:bg-slate-50 cursor-pointer transition-all flex items-center justify-between">
-                            <div>
-                                <span class="text-xs font-black text-slate-800">${c.name}</span>
-                                <p class="text-[11px] text-slate-400 mt-1">${c.신입경력여부} · 경력 ${c.보험경력 || '없음'}</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-xs font-black text-indigo-600">${doneCount}/8 완료</span>
-                                <div class="w-16 bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
-                                    <div class="bg-indigo-600 h-full rounded-full" style="width: ${pct}%"></div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-lg transition-all duration-200 flex flex-col justify-between gap-3 shadow-sm">
+                            <div onclick="openEditCandidateModal('${c.id}')" class="cursor-pointer space-y-3">
+                                <!-- 헤더라인 -->
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${displayName}</h4>
+                                    <span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${careerText}</span>
                                 </div>
+                                
+                                <!-- 컨텐츠 -->
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2">
+                                    <div class="flex items-center justify-between text-[10px] text-slate-400 font-bold">
+                                        <span>제출 서류 현황</span>
+                                        <span class="text-indigo-600 text-xs font-extrabold">${doneCount}/${totalCount} 완료</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        ${dotsHtml}
+                                    </div>
+                                </div>
+                                
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                                    <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${c.위촉담당자 || '미배정'}</span>
+                                    ${c.예정입사일 ? `<span class="flex items-center gap-1 text-emerald-600"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${formatDateOnly(c.예정입사일)} 입사예정</span>` : ''}
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                <button onclick="sendLmsNotice('${c.id}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1"><i data-lucide="send" class="w-3.5 h-3.5"></i> 안내 문자</button>
+                                <button onclick="openDocCheckModal('${c.id}')" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs flex items-center gap-1"><i data-lucide="file-check-2" class="w-3.5 h-3.5"></i> 위촉진행 체크</button>
+                                <button onclick="finalizeAdmission('${c.id}')" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1"><i data-lucide="check" class="w-3.5 h-3.5"></i> 최종 입사처리</button>
                             </div>
                         </div>
                     `;
@@ -1959,169 +2112,10 @@
 
             html += `
                     </div>
-
-                    <div class="lg:col-span-2" id="doc-detail-slot-parent">
-                        <div class="bg-white border border-slate-200 rounded-2xl p-16 text-center shadow-sm">
-                            <i data-lucide="file-check-2" class="w-12 h-12 text-slate-300 mx-auto stroke-1 mb-2"></i>
-                            <p class="text-xs text-slate-400 font-bold">좌측 후보자를 선택하시면 제출 서류 체크리스트를 일괄 수정할 수 있습니다.</p>
-                        </div>
-                    </div>
                 </div>
             `;
             parent.innerHTML = html;
-
-            if (list.length > 0) {
-                renderDocDetailSlot(list[0].id);
-            }
-        }
-
-        // --- 상세 서류 체크리스트 패널 조립 (타입체킹 헬퍼 완벽 대응) ---
-        function renderDocDetailSlot(candId) {
-            const c = candidatesList.find(cand => cand.id === candId);
-            if (!c) return;
-
-            if (!docDraftBuffer[candId]) {
-                const docSource = documentsList.find(d => d.candidate_id === candId) || {
-                    candidate_id: candId, 단톡방초대: false, 이클린서비스: false, 신분증: false, 통장사본: false, 가족관계증명서: false, 손보합격증: false, 생보합격증: false, 경력증명서: false, 수료증: false, 생보URL전달: false, 동양라이나서류: false, memo: ""
-                };
-                docDraftBuffer[candId] = JSON.parse(JSON.stringify(docSource)); 
-            }
-
-            const doc = docDraftBuffer[candId];
-            const docKeys = ['이클린서비스', '신분증', '통장사본', '가족관계증명서', '손보합격증', '생보합격증', '경력증명서', '수료증'];
-            const doneCount = docKeys.filter(k => isChecked(doc[k])).length;
-            const pct = Math.round((doneCount / docKeys.length) * 100);
-
-            const container = document.getElementById('doc-detail-slot-parent');
-            container.innerHTML = `
-                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
-                    <div class="flex justify-between items-center pb-4 border-b border-slate-100">
-                        <div>
-                            <span class="text-sm font-black text-slate-900">${c.name} 후보자 위촉 서류</span>
-                            <p class="text-xs text-slate-400 mt-1">소개 — ${c.소개자 || '없음'} · 서류 가체크 상태 편집 중</p>
-                        </div>
-                        <div class="text-right">
-                            <span class="text-xs font-bold text-slate-400">서류진행률</span>
-                            <div class="text-lg font-black text-indigo-600">${pct}%</div>
-                        </div>
-                    </div>
-
-                    <!-- 단톡방 초대 토글 스위치 -->
-                    <div class="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between">
-                        <div>
-                            <span class="text-xs font-bold text-slate-800">단톡방 초대</span>
-                            <p class="text-[11px] text-slate-400 mt-0.5">본부 공식 단톡방에 초대를 완료하였습니까?</p>
-                        </div>
-                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" id="doc-opt-kakao" ${isChecked(doc.단톡방초대) ? 'checked' : ''} onchange="toggleDraftToggleState('${candId}', '단톡방초대')" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer outline-none"/>
-                            <label class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
-                        </div>
-                    </div>
-
-                    <!-- 2열 그리드 구조 체크박스 버튼 세트 -->
-                    <div class="space-y-2">
-                        <span class="text-xs font-bold text-slate-400">제출 서류 체크리스트 (${doneCount} / 8 완료)</span>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            ${buildDraftCheckboxBtn(candId, '이클린서비스', '이클린서비스', '금융범죄 이력 조회', doc.이클린서비스)}
-                            ${buildDraftCheckboxBtn(candId, '신분증', '신분증 사본', '주민등록증 / 운전면허', doc.신분증)}
-                            ${buildDraftCheckboxBtn(candId, '통장사본', '통장사본', '수당 지급용 계좌', doc.통장사본)}
-                            ${buildDraftCheckboxBtn(candId, '가족관계증명서', '가족관계증명서', '3개월 이내 발급본', doc.가족관계증명서)}
-                            ${buildDraftCheckboxBtn(candId, '손보합격증', '손보합격증', '손해설계사 자격 인증', doc.손보합격증)}
-                            ${buildDraftCheckboxBtn(candId, '생보합격증', '생보합격증', '생명설계사 자격 인증', doc.생보합격증)}
-                            ${buildDraftCheckboxBtn(candId, '경력증명서', '경력증명서', '경력직 위촉 필수서류', doc.경력증명서)}
-                            ${buildDraftCheckboxBtn(candId, '수료증', '교육 수료증', '신입 교육이수 인증', doc.수료증)}
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">예정 입사일</label>
-                            <input type="date" id="doc-opt-join-date" value="${c.예정입사일 || ''}" onchange="updateCandidateInfo('${candId}', '예정입사일')" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1.5">위촉 담당자</label>
-                            <input type="text" id="doc-opt-manager" value="${c.위촉담당자 || currentUser.이름}" onchange="updateCandidateInfo('${candId}', '위촉담당자')" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none" placeholder="담당자 이름">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">위촉 서류 메모 / 비고</label>
-                        <textarea id="doc-opt-memo" rows="2" oninput="updateDraftMemoState('${candId}', this.value)" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none" placeholder="서류 보완 일정 등을 편하게 작성해주세요.">${doc.memo || ''}</textarea>
-                    </div>
-
-                    <!-- 하단 일괄 저장 처리 바 -->
-                    <div class="pt-4 border-t border-slate-100 flex justify-between items-center font-bold">
-                        <span class="text-xs text-slate-400">* 변경사항은 우측 [위촉 정보 일괄 저장] 버튼을 누르셔야 스프레드시트에 영구 저장됩니다.</span>
-                        <div class="flex gap-2 shrink-0">
-                            <button onclick="sendLmsNotice('${candId}')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all"><i data-lucide="send" class="w-3.5 h-3.5"></i> 안내 문자</button>
-                            <button onclick="executeSaveDraftDocBatch('${candId}')" id="doc-batch-save-btn" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-md shadow-indigo-600/10"><i data-lucide="save" class="w-3.5 h-3.5"></i> 위촉 정보 일괄 저장</button>
-                            <button onclick="finalizeAdmission('${candId}')" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/10"><i data-lucide="check" class="w-3.5 h-3.5"></i> 최종 입사 처리</button>
-                        </div>
-                    </div>
-                </div>
-            `;
             lucide.createIcons();
-        }
-
-        function buildDraftCheckboxBtn(candId, key, label, desc, val) {
-            const checked = isChecked(val);
-            const activeClass = checked ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-700';
-            const checkIcon = checked ? '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>' : '<div class="w-4 h-4 rounded-full border border-slate-300"></div>';
-            
-            return `
-                <div onclick="toggleDraftCheckboxState('${candId}', '${key}', ${checked})" class="p-3.5 border rounded-xl flex items-center justify-between cursor-pointer hover:border-emerald-500 transition-all ${activeClass}">
-                    <div class="text-left">
-                        <div class="text-xs leading-none">${label}</div>
-                        <div class="text-[10px] text-slate-400 mt-1">${desc}</div>
-                    </div>
-                    ${checkIcon}
-                </div>
-            `;
-        }
-
-        function toggleDraftCheckboxState(candId, key, currentVal) {
-            if (docDraftBuffer[candId]) {
-                docDraftBuffer[candId][key] = !currentVal;
-                renderDocDetailSlot(candId);
-            }
-        }
-
-        function toggleDraftToggleState(candId, key) {
-            if (docDraftBuffer[candId]) {
-                const checked = document.getElementById('doc-opt-kakao').checked;
-                docDraftBuffer[candId][key] = checked;
-            }
-        }
-
-        function updateDraftMemoState(candId, value) {
-            if (docDraftBuffer[candId]) {
-                docDraftBuffer[candId].memo = value;
-            }
-        }
-
-        async function executeSaveDraftDocBatch(candId) {
-            const draft = docDraftBuffer[candId];
-            if (!draft) return;
-
-            const saveBtn = document.getElementById('doc-batch-save-btn');
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent mr-2"></span> 저장 중...';
-
-            draft.updated_at = new Date().toISOString();
-            showLoader("구글 스프레드시트에 서류 정보를 전격 기록 중...");
-
-            try {
-                await fetch(FIXED_GAS_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "save_documents", documents: draft })
-                });
-                showToast("성공적으로 모든 위촉 서류 변경점이 일괄 반영되었습니다.", "success");
-            } catch(e) {
-                saveDocCache(draft);
-            }
-
-            await syncDatabase();
-            renderDocDetailSlot(candId);
         }
 
         function openEditCandidateModal(candId) {
@@ -2635,21 +2629,6 @@
             switchView("stage3");
         }
 
-        async function promoteToStage4(candId) {
-            const cand = candidatesList.find(c => c.id === candId);
-            if (cand) {
-                const confirmed = confirm(`위촉진행 승인을 하시겠습니까? 승인시 ${cand.name} 후보자를 위촉진행 메뉴로 이동합니다.`);
-                if (!confirmed) return;
-
-                cand.현재단계 = "4. 위촉진행";
-                cand.stage_updated = getLocalTimeString(); 
-                showLoader("위촉진행 데이터로 이식 중...");
-                await executeUpdateCandidate(cand);
-                await syncDatabase();
-                switchView("stage4");
-            }
-        }
-
         async function rejectCandidate(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
@@ -2697,31 +2676,53 @@
                 `;
             } else {
                 filtered.forEach(c => {
-                    const avatarChar = c.name.charAt(0);
-                    const formattedDate = formatDateTime(c.stage_updated);
+                    const isCareer = c.신입경력여부 === '경력';
+                    const careerText = isCareer ? `경력 ${c.보험경력 || '미정'}` : '신입';
+                    const tagColor = isCareer ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200';
+                    
+                    const displayRegion = c.지역 ? `(${c.지역})` : '';
+                    const displayName = `${c.name} ${displayRegion}`;
+                    
+                    const doc = docDraftBuffer[c.id] || documentsList.find(d => d.candidate_id === c.id) || {};
+                    const docKeys = ['이클린서비스', '신분증', '통장사본', '가족관계증명서', '손보합격증', '생보합격증', '경력증명서', '수료증'];
+                    const doneCount = docKeys.filter(k => isChecked(doc[k])).length;
+                    const missingCount = docKeys.length - doneCount;
+                    
                     const displayJoinMonth = c.stage_updated ? formatYearMonthOnly(c.stage_updated) : (c.예정입사일 ? formatYearMonthOnly(c.예정입사일) : '입사일 미정');
                     const displayJoinText = `${displayJoinMonth} 입사`;
 
+                    let missingHtml = '';
+                    if (missingCount > 0) {
+                        missingHtml = `<span class="text-rose-600 text-xs font-extrabold flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> 미제출 서류 ${missingCount}건</span>`;
+                    } else {
+                        missingHtml = `<span class="text-emerald-600 text-xs font-extrabold flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> 서류 제출 완료</span>`;
+                    }
+
                     html += `
-                        <div onclick="openEditCandidateModal('${c.id}')" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-indigo-400 transition-all flex flex-col justify-between gap-4 cursor-pointer">
-                            <div class="flex items-start gap-4">
-                                <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-700 font-extrabold flex items-center justify-center text-base shrink-0">${avatarChar}</div>
-                                <div class="space-y-1">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <h4 class="text-base font-black text-slate-900">${c.name}</h4>
-                                        <span class="text-xs bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded">${c.신입경력여부}</span>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-lg transition-all duration-200 flex flex-col justify-between gap-3 shadow-sm">
+                            <div onclick="openEditCandidateModal('${c.id}')" class="cursor-pointer space-y-3">
+                                <!-- 헤더라인 -->
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${displayName}</h4>
+                                    <span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${careerText}</span>
+                                </div>
+                                
+                                <!-- 컨텐츠 -->
+                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col gap-2">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-slate-600 font-bold">${displayJoinText}</span>
+                                        ${missingHtml}
                                     </div>
-                                    <p class="text-xs text-slate-400">소개 — ${c.소개자 || '자체유입'} · <span class="text-emerald-600 font-bold">${displayJoinText}</span></p>
-                                    <div class="flex flex-wrap gap-1.5 mt-1">
-                                        <span class="bg-emerald-50 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">${c.유입경로} 유입</span>
-                                        ${c.현직업 ? `<span class="bg-slate-50 text-slate-500 text-xs font-bold px-2 py-0.5 rounded-full">${c.현직업}</span>` : ''}
-                                        ${c.지역 ? `<span class="bg-emerald-50/50 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full">${c.지역}</span>` : ''}
-                                    </div>
-                                    <p class="text-xs text-slate-400 font-medium pt-1">업데이트일: ${formattedDate}</p>
+                                </div>
+                                
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                                    <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${c.위촉담당자 || '미배정'}</span>
+                                    <span class="flex items-center gap-1 text-slate-400"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${formatDateOnly(c.stage_updated)}</span>
                                 </div>
                             </div>
-                            <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
-                                <span class="flex items-center gap-1"><i data-lucide="user-check" class="w-3.5 h-3.5 text-slate-400"></i> 담당: ${c.위촉담당자 || '미배정'}</span>
+
+                            <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                                <button onclick="event.stopPropagation(); openDocCheckModal('${c.id}')" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs flex items-center gap-1"><i data-lucide="file-check-2" class="w-3.5 h-3.5"></i> 위촉서류 체크</button>
                             </div>
                         </div>
                     `;
@@ -2801,9 +2802,17 @@
         }
 
         function executeLogout() {
-            localStorage.removeItem('RECRUIT_SESSION');
+            try {
+                localStorage.removeItem('RECRUIT_SESSION');
+            } catch (e) {
+                console.error("Logout: Failed to clear session from localStorage", e);
+            }
             currentUser = null;
-            closeLogoutModal();
+            try {
+                closeLogoutModal();
+            } catch (e) {
+                console.error("Logout: Failed to close modal", e);
+            }
             showLoginView();
             showToast("보안 세션이 안전하게 종료되었습니다.", "success");
         }
@@ -2910,10 +2919,225 @@
             showToast("위촉 안내 메시지가 클립보드에 자동 복사되었습니다. 카톡이나 문자로 발송하세요!", "success");
         }
 
+        function promoteToStage4(candId) {
+            const cand = candidatesList.find(c => c.id === candId);
+            if (!cand) return;
+
+            const modalHtml = `
+                <div id="quick-stage4-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center">
+                    <div class="bg-white rounded-3xl max-w-sm w-full mx-4 p-6 space-y-4 shadow-2xl">
+                        <h4 class="text-sm font-bold text-slate-900">${cand.name} 위촉진행 필수정보 확인</h4>
+                        <p class="text-xs text-slate-400 font-semibold leading-relaxed">위촉 진행을 위해 아래 필수 정보를 최종 확인/입력해 주십시오.</p>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">이름 <span class="text-rose-500">*</span></label>
+                                <input type="text" id="stage4-name" value="${cand.name || ''}" class="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">핸드폰번호 <span class="text-rose-500">*</span></label>
+                                <input type="tel" id="stage4-phone" value="${cand.phone || ''}" class="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-indigo-500" placeholder="010-0000-0000">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">주민등록번호 <span class="text-rose-500">*</span></label>
+                                <input type="text" id="stage4-rrn" value="${cand.주민등록번호 || ''}" class="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-indigo-500" placeholder="000000-0000000">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">자택주소 <span class="text-rose-500">*</span></label>
+                                <input type="text" id="stage4-address" value="${cand.주소 || ''}" class="w-full px-3.5 py-2.5 border rounded-xl text-xs outline-none focus:ring-1 focus:ring-indigo-500" placeholder="상세 주소를 입력하세요">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="document.getElementById('quick-stage4-overlay').remove()" class="flex-1 py-2 bg-slate-100 rounded-xl text-xs font-bold">취소</button>
+                            <button id="stage4-submit-btn" onclick="saveStage4Transition('${cand.id}')" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">저장 및 승인</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        async function saveStage4Transition(candId) {
+            const name = document.getElementById('stage4-name').value.trim();
+            const phone = document.getElementById('stage4-phone').value.trim();
+            const rrn = document.getElementById('stage4-rrn').value.trim();
+            const address = document.getElementById('stage4-address').value.trim();
+
+            if (!name || !phone || !rrn || !address) {
+                showToast("필수 항목(*표시)이 모두 채워지지 않았습니다. 하나라도 누락 시 진행이 불가합니다.", "error");
+                return;
+            }
+
+            const submitBtn = document.getElementById('stage4-submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent mr-1 inline-block vertical-middle"></span> 처리 중...';
+            }
+
+            showLoader("위촉 필수 정보 저장 및 4단계 전송 중...");
+            const cand = candidatesList.find(c => c.id === candId);
+            if (cand) {
+                cand.name = name;
+                cand.phone = phone;
+                cand.주민등록번호 = rrn;
+                cand.주소 = address;
+                cand.현재단계 = "4. 위촉진행";
+                cand.stage_updated = getLocalTimeString(); 
+                await executeUpdateCandidate(cand);
+            }
+
+            const overlay = document.getElementById('quick-stage4-overlay');
+            if (overlay) overlay.remove();
+
+            await syncDatabase();
+            switchView("stage4");
+        }
+
+        function openDocCheckModal(candId) {
+            const c = candidatesList.find(cand => cand.id === candId);
+            if (!c) return;
+
+            if (!docDraftBuffer[candId]) {
+                const docSource = documentsList.find(d => d.candidate_id === candId) || {
+                    candidate_id: candId, 단톡방초대: false, 이클린서비스: false, 신분증: false, 통장사본: false, 가족관계증명서: false, 손보합격증: false, 생보합격증: false, 경력증명서: false, 수료증: false, 생보URL전달: false, 동양라이나서류: false, memo: ""
+                };
+                docDraftBuffer[candId] = JSON.parse(JSON.stringify(docSource)); 
+            }
+
+            const doc = docDraftBuffer[candId];
+            const docKeys = ['이클린서비스', '신분증', '통장사본', '가족관계증명서', '손보합격증', '생보합격증', '경력증명서', '수료증'];
+            const doneCount = docKeys.filter(k => isChecked(doc[k])).length;
+            const pct = Math.round((doneCount / docKeys.length) * 100);
+
+            const modalHtml = `
+                <div id="quick-doc-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+                        <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+                            <div>
+                                <span class="text-sm font-black text-slate-900">${c.name} 위촉 서류 체크</span>
+                                <p class="text-xs text-slate-400 mt-1">서류 보완 및 일괄 체크 수정</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-bold text-slate-400">서류진행률</span>
+                                <div class="text-lg font-black text-indigo-600">${pct}%</div>
+                            </div>
+                        </div>
+
+                        <!-- 3개 체크 옵션 (단톡방초대, 생보URL전달, 동양라이나서류) 일반 카드형태로 개선 통합 -->
+                        <div class="space-y-2">
+                            <span class="text-xs font-bold text-slate-400">위촉 진행 및 추가 서류 현황</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                ${buildModalDraftCheckboxBtn(candId, '단톡방초대', '단톡방 초대', '공식 단톡방 초대', doc.단톡방초대)}
+                                ${buildModalDraftCheckboxBtn(candId, '생보URL전달', '생보 URL 전달', '생명보험 URL 전달', doc.생보URL전달)}
+                                ${buildModalDraftCheckboxBtn(candId, '동양라이나서류', '동양, 라이나 서류', '동양 및 라이나 서류', doc.동양라이나서류)}
+                            </div>
+                        </div>
+
+                        <!-- 2열 그리드 구조 체크박스 버튼 세트 -->
+                        <div class="space-y-2">
+                            <span class="text-xs font-bold text-slate-400">제출 서류 체크리스트 (${doneCount} / 8 완료)</span>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                ${buildModalDraftCheckboxBtn(candId, '이클린서비스', '이클린서비스', '금융범죄 이력 조회', doc.이클린서비스)}
+                                ${buildModalDraftCheckboxBtn(candId, '신분증', '신분증 사본', '주민등록증 / 운전면허', doc.신분증)}
+                                ${buildModalDraftCheckboxBtn(candId, '통장사본', '통장사본', '수당 지급용 계좌', doc.통장사본)}
+                                ${buildModalDraftCheckboxBtn(candId, '가족관계증명서', '가족관계증명서', '3개월 이내 발급본', doc.가족관계증명서)}
+                                ${buildModalDraftCheckboxBtn(candId, '손보합격증', '손보합격증', '손해설계사 자격 인증', doc.손보합격증)}
+                                ${buildModalDraftCheckboxBtn(candId, '생보합격증', '생보합격증', '생명설계사 자격 인증', doc.생보합격증)}
+                                ${buildModalDraftCheckboxBtn(candId, '경력증명서', '경력증명서', '경력직 위촉 필수서류', doc.경력증명서)}
+                                ${buildModalDraftCheckboxBtn(candId, '수료증', '교육 수료증', '신입 교육이수 인증', doc.수료증)}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">위촉 서류 메모 / 비고</label>
+                            <textarea id="modal-doc-opt-memo" rows="2" class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none" placeholder="서류 보완 일정을 작성해주세요.">${doc.memo || ''}</textarea>
+                        </div>
+
+                        <div class="flex gap-2 pt-4 border-t border-slate-100">
+                            <button onclick="document.getElementById('quick-doc-overlay').remove()" class="flex-1 py-2 bg-slate-100 rounded-xl text-xs font-bold">취소</button>
+                            <button id="modal-doc-save-btn" onclick="saveModalDraftDocBatch('${candId}')" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">저장 및 완료</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            lucide.createIcons();
+        }
+
+        function buildModalDraftCheckboxBtn(candId, key, label, desc, val) {
+            const checked = isChecked(val);
+            const activeClass = checked ? 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-700';
+            const checkIcon = checked ? '<i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>' : '<div class="w-4 h-4 rounded-full border border-slate-300"></div>';
+            
+            return `
+                <div onclick="toggleModalDraftCheckboxState('${candId}', '${key}', ${checked})" class="p-3.5 border rounded-xl flex items-center justify-between cursor-pointer hover:border-emerald-500 transition-all ${activeClass}">
+                    <div class="text-left">
+                        <div class="text-xs leading-none">${label}</div>
+                        <div class="text-[10px] text-slate-400 mt-1">${desc}</div>
+                    </div>
+                    ${checkIcon}
+                </div>
+            `;
+        }
+
+        function toggleModalDraftCheckboxState(candId, key, currentVal) {
+            if (docDraftBuffer[candId]) {
+                docDraftBuffer[candId][key] = !currentVal;
+                const memoArea = document.getElementById('modal-doc-opt-memo');
+                if (memoArea) {
+                    docDraftBuffer[candId].memo = memoArea.value;
+                }
+                const overlay = document.getElementById('quick-doc-overlay');
+                if (overlay) overlay.remove();
+                openDocCheckModal(candId);
+            }
+        }
+
+        async function saveModalDraftDocBatch(candId) {
+            const memoArea = document.getElementById('modal-doc-opt-memo');
+            if (memoArea && docDraftBuffer[candId]) {
+                docDraftBuffer[candId].memo = memoArea.value;
+            }
+
+            const doc = docDraftBuffer[candId];
+            if (!doc) return;
+
+            const saveBtn = document.getElementById('modal-doc-save-btn');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent mr-1 inline-block vertical-middle"></span> 저장 중...';
+            }
+
+            showLoader("위촉 서류 정보 서버 일괄 저장 중...");
+            try {
+                const res = await fetch(FIXED_GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "save_documents", documents: doc })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    showToast("서류 현황이 스프레드시트에 영구 등재되었습니다.", "success");
+                }
+            } catch(e) {
+                let list = JSON.parse(localStorage.getItem('DB_DOCUMENTS_V3')) || [];
+                list = list.filter(d => d.candidate_id !== candId);
+                list.push(doc);
+                localStorage.setItem('DB_DOCUMENTS_V3', JSON.stringify(list));
+                showToast("통신 제한으로 로컬 세션에 보존되었습니다.", "info");
+            }
+
+            const overlay = document.getElementById('quick-doc-overlay');
+            if (overlay) overlay.remove();
+
+            await syncDatabase();
+        }
+
         function finalizeAdmission(candId) {
             const cand = candidatesList.find(c => c.id === candId);
             if (cand) {
-                cand.currentView = "5. 입사완료";
+                const confirmed = confirm(`최종 입사처리 하시겠습니까? 승인시 ${cand.name} 후보자를 입사완료 메뉴로 이동합니다.`);
+                if (!confirmed) return;
+
+                cand.현재단계 = "5. 입사완료";
                 cand.stage_updated = getLocalTimeString(); 
                 showLoader("위촉 최종 승인 및 5단계 이동 중...");
                 executeUpdateCandidate(cand).then(() => {
