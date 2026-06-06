@@ -933,8 +933,8 @@
                 "stage3": "상담완료 후보자",
                 "stage4": "위촉진행 후보자",
                 "stage5": "입사완료자",
-                "stage6": "거절후보자 데이터베이스",
-                "stage7": "퇴사자 관리 이력",
+                "stage6": "거절후보자",
+                "stage7": "퇴사자",
                 "reports": "리쿠르팅 성과 분석 리포트"
             };
             document.getElementById('main-view-title').innerText = titleMap[viewName] || "파트너스본부 CRM";
@@ -1201,14 +1201,29 @@
                 // 5) 입사완료 : 이름, 지역, 신입경력유무 및 보험 경력, 리쿠르팅담당자, 입사년월
                 const displayJoinMonth = cand.stage_updated ? formatYearMonthOnly(cand.stage_updated) : (cand.예정입사일 ? formatYearMonthOnly(cand.예정입사일) : '입사일 미정');
                 const displayJoinText = `${displayJoinMonth} 입사`;
+
+                const doc = docDraftBuffer[cand.id] || documentsList.find(d => d.candidate_id === cand.id) || {};
+                const docKeys = ['이클린서비스', '신분증', '통장사본', '가족관계증명서', '손보합격증', '생보합격증', '경력증명서', '수료증'];
+                const doneCount = docKeys.filter(k => isChecked(doc[k])).length;
+                const missingCount = docKeys.length - doneCount;
+
+                let missingHtml = '';
+                if (missingCount > 0) {
+                    missingHtml = `<span class="text-rose-600 text-[10px] font-bold flex items-center gap-0.5"><i data-lucide="alert-circle" class="w-3 h-3"></i> 미제출 ${missingCount}건</span>`;
+                } else {
+                    missingHtml = `<span class="text-emerald-600 text-[10px] font-bold flex items-center gap-0.5"><i data-lucide="check-circle" class="w-3 h-3"></i> 서류 완료</span>`;
+                }
                 
                 cardContentHtml = `
-                    <div class="text-xs text-slate-600 font-bold flex items-center gap-1">
-                        <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500"></i>
-                        <span>${displayJoinText}</span>
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex flex-col gap-1 text-xs">
+                        <div class="flex items-center justify-between font-bold">
+                            <span class="text-slate-600">${displayJoinText}</span>
+                            ${missingHtml}
+                        </div>
                     </div>
                     <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
                         <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${cand.위촉담당자 || '미배정'}</span>
+                        <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${formatDateOnly(cand.stage_updated)}</span>
                     </div>
                 `;
             }
@@ -1543,12 +1558,12 @@
 
             let html = `
                 <div class="flex flex-col space-y-4">
-                    <div class="bg-white border border-slate-200 rounded-2xl p-4 flex flex-wrap gap-2 items-center justify-between shadow-sm">
-                        <div class="flex flex-wrap gap-2" id="stage1-tab-group">
-                            <button onclick="setStage1Filter('ALL')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'ALL' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">전체 ${countAll}</button>
-                            <button onclick="setStage1Filter('CAREER')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'CAREER' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">경력 ${countCareer}</button>
-                            <button onclick="setStage1Filter('NEW')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'NEW' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">신입 ${countNew}</button>
-                            <button onclick="setStage1Filter('EXAM')" class="px-4 py-2 border rounded-xl text-xs font-bold transition-all ${stage1SubFilter === 'EXAM' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">시험 ${countExam}</button>
+                    <div class="bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-between shadow-sm overflow-hidden">
+                        <div class="flex gap-1.5 overflow-x-auto whitespace-nowrap w-full" id="stage1-tab-group">
+                            <button onclick="setStage1Filter('ALL')" class="px-3 py-1.5 border rounded-xl text-xs font-bold transition-all shrink-0 ${stage1SubFilter === 'ALL' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">전체 ${countAll}</button>
+                            <button onclick="setStage1Filter('CAREER')" class="px-3 py-1.5 border rounded-xl text-xs font-bold transition-all shrink-0 ${stage1SubFilter === 'CAREER' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">경력 ${countCareer}</button>
+                            <button onclick="setStage1Filter('NEW')" class="px-3 py-1.5 border rounded-xl text-xs font-bold transition-all shrink-0 ${stage1SubFilter === 'NEW' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">신입 ${countNew}</button>
+                            <button onclick="setStage1Filter('EXAM')" class="px-3 py-1.5 border rounded-xl text-xs font-bold transition-all shrink-0 ${stage1SubFilter === 'EXAM' ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 border-slate-200'}">시험 ${countExam}</button>
                         </div>
                     </div>
 
@@ -1981,18 +1996,13 @@
                         resultColor = 'bg-rose-50 text-rose-700 border-rose-200';
                     }
 
-                    let badgeStackHtml = `<span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${careerText}</span>`;
-                    badgeStackHtml += `<span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${resultColor} mt-1">${result}</span>`;
-
                     html += `
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-lg transition-all duration-200 flex flex-col justify-between gap-3 shadow-sm">
                             <div onclick="openEditCandidateModal('${c.id}')" class="cursor-pointer space-y-3">
                                 <!-- 헤더라인 -->
-                                <div class="flex justify-between items-start">
+                                <div class="flex justify-between items-center">
                                     <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${displayName}</h4>
-                                    <div class="flex flex-col items-end shrink-0">
-                                        ${badgeStackHtml}
-                                    </div>
+                                    <span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${careerText}</span>
                                 </div>
                                 
                                 <!-- 컨텐츠 -->
@@ -2008,6 +2018,7 @@
                                 
                                 <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
                                     <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${c.위촉담당자 || '미배정'}</span>
+                                    <span class="text-[10px] font-black border px-2.5 py-0.5 rounded-md ${resultColor}">${result}</span>
                                 </div>
                             </div>
 
@@ -2101,9 +2112,9 @@
                             </div>
 
                             <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                                <button onclick="sendLmsNotice('${c.id}')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-1"><i data-lucide="send" class="w-3.5 h-3.5"></i> 안내 문자</button>
-                                <button onclick="openDocCheckModal('${c.id}')" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs flex items-center gap-1"><i data-lucide="file-check-2" class="w-3.5 h-3.5"></i> 위촉진행 체크</button>
-                                <button onclick="finalizeAdmission('${c.id}')" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1"><i data-lucide="check" class="w-3.5 h-3.5"></i> 최종 입사처리</button>
+                                <button onclick="sendLmsNotice('${c.id}')" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">안내문자</button>
+                                <button onclick="openDocCheckModal('${c.id}')" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs">위촉서류</button>
+                                <button onclick="finalizeAdmission('${c.id}')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">입사처리</button>
                             </div>
                         </div>
                     `;
@@ -2756,31 +2767,80 @@
             }
 
             const list = getPermittedCandidates().filter(c => c.현재단계 === stageName);
+            const displayStageName = stageName.substring(3);
 
             let html = `
-                <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
-                        <h3 class="text-xs font-black text-slate-800">${stageName} 목록 (${list.length}명)</h3>
-                        <span class="text-xs text-slate-400">등록 완료 상태 기준</span>
-                    </div>
-
-                    <div class="space-y-3">
+                <div class="flex flex-col space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             `;
 
             if (list.length === 0) {
                 html += `
-                    <div class="text-center py-16 text-slate-400 text-xs font-bold">배정된 인원이 없습니다.</div>
+                    <div class="col-span-full bg-white rounded-3xl p-16 text-center border border-slate-200">
+                        <i data-lucide="users" class="w-12 h-12 text-slate-300 mx-auto stroke-1 mb-3"></i>
+                        <h4 class="text-xs font-bold text-slate-400">조건에 부합하는 ${displayStageName} 대상자가 없습니다.</h4>
+                    </div>
                 `;
             } else {
                 list.forEach(c => {
-                    const formattedDate = formatDateTime(c.stage_updated);
-                    html += `
-                        <div onclick="openEditCandidateModal('${c.id}')" class="p-4 border border-slate-100 rounded-xl flex items-center justify-between hover:border-indigo-400 transition-all cursor-pointer">
-                            <div>
-                                <span class="text-xs font-black text-slate-800">${c.name}</span>
-                                <p class="text-[11px] text-slate-400 mt-1">${c.phone} · 담당자: ${c.위촉담당자}</p>
+                    const isCareer = c.신입경력여부 === '경력';
+                    const careerText = isCareer ? `경력 ${c.보험경력 || '미정'}` : '신입';
+                    const tagColor = isCareer ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-sky-50 text-sky-700 border-sky-200';
+                    
+                    const displayRegion = c.지역 ? `(${c.지역})` : '';
+                    const displayName = `${c.name} ${displayRegion}`;
+                    const displayDate = formatDateOnly(c.stage_updated || c.created_at);
+                    
+                    let funnelText = c.유입경로 || '';
+                    if (funnelText === '소개' && c.소개자) {
+                        funnelText = `소개 (${c.소개자})`;
+                    }
+                    const sourceDetail = c.이전소속사 ? ` / ${c.이전소속사}` : (c.현직업 ? ` / ${c.현직업}` : '');
+                    const displaySource = `${funnelText}${sourceDetail}`;
+                    
+                    let examWaitingText = '';
+                    const hasSonbo = isChecked(c.손보시험);
+                    const hasSaengbo = isChecked(c.생보시험);
+                    
+                    let cardContentHtml = '';
+                    if (hasSonbo || hasSaengbo) {
+                        const exams = [];
+                        if (hasSonbo) exams.push('손보');
+                        if (hasSaengbo) exams.push('생보');
+                        examWaitingText = `<div class="text-xs text-amber-600 font-bold flex items-center gap-1"><i data-lucide="file-signature" class="w-3.5 h-3.5 text-amber-500"></i>시험대기 : ${exams.join('/')}</div>`;
+                        cardContentHtml = `
+                            <div class="text-xs font-bold flex flex-col gap-0.5">
+                                ${examWaitingText}
                             </div>
-                            <span class="text-xs text-slate-400">${formattedDate} 업데이트</span>
+                        `;
+                    } else {
+                        cardContentHtml = `
+                            <div class="text-xs text-indigo-600 font-bold flex flex-col gap-0.5">
+                                <div class="flex items-center gap-1">
+                                    <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+                                    <span>${displaySource}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                        <div onclick="openEditCandidateModal('${c.id}')" class="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-500 hover:shadow-lg transition-all duration-200 flex flex-col justify-between gap-3 shadow-sm cursor-pointer">
+                            <div class="space-y-3">
+                                <!-- 헤더라인 -->
+                                <div class="flex justify-between items-center">
+                                    <h4 class="text-base font-extrabold text-slate-800 tracking-tight">${displayName}</h4>
+                                    <span class="text-[10px] font-black border px-2 py-0.5 rounded-md ${tagColor}">${careerText}</span>
+                                </div>
+                                
+                                <!-- 컨텐츠 -->
+                                ${cardContentHtml}
+                                
+                                <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+                                    <span class="flex items-center gap-1"><i data-lucide="user" class="w-3.5 h-3.5"></i> ${c.위촉담당자 || '미배정'}</span>
+                                    <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${displayDate}</span>
+                                </div>
+                            </div>
                         </div>
                     `;
                 });
