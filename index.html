@@ -289,11 +289,13 @@
                     <div>
                         <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block px-2 mb-2">기타</span>
                         <div class="space-y-1">
-                            <button onclick="switchView('stage6')" id="btn-menu-stage6" class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all">
-                                <i data-lucide="user-minus" class="w-4.5 h-4.5"></i> 거절후보자
+                            <button onclick="switchView('stage6')" id="btn-menu-stage6" class="w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all">
+                                <span class="flex items-center gap-2.5"><i data-lucide="user-minus" class="w-4.5 h-4.5"></i> 거절후보자</span>
+                                <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full" id="count-stage6-badge">0</span>
                             </button>
-                            <button onclick="switchView('stage7')" id="btn-menu-stage7" class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all">
-                                <i data-lucide="log-out" class="w-4.5 h-4.5"></i> 퇴사자
+                            <button onclick="switchView('stage7')" id="btn-menu-stage7" class="w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition-all">
+                                <span class="flex items-center gap-2.5"><i data-lucide="log-out" class="w-4.5 h-4.5"></i> 퇴사자</span>
+                                <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5 rounded-full" id="count-stage7-badge">0</span>
                             </button>
                         </div>
                     </div>
@@ -893,6 +895,8 @@
             document.getElementById('count-stage3-badge').innerText = list.filter(c => c.현재단계 && c.현재단계.includes('상담완료')).length;
             document.getElementById('count-stage4-badge').innerText = list.filter(c => c.현재단계 && c.현재단계.includes('위촉진행')).length;
             document.getElementById('count-stage5-badge').innerText = list.filter(c => c.현재단계 && c.현재단계.includes('입사완료')).length;
+            document.getElementById('count-stage6-badge').innerText = list.filter(c => c.현재단계 && c.현재단계.includes('거절후보자')).length;
+            document.getElementById('count-stage7-badge').innerText = list.filter(c => c.현재단계 && c.현재단계.includes('퇴사자')).length;
         }
 
         function getPermittedCandidates() {
@@ -3198,6 +3202,7 @@
 
             const doc = docDraftBuffer[candId];
             if (!doc) return;
+            doc.updated_at = getLocalTimeString();
 
             const saveBtn = document.getElementById('modal-doc-save-btn');
             if (saveBtn) {
